@@ -81,6 +81,7 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vita
                     admission_record[vital_sign].append(temp_record)
                     break  # Stop checking further records for this temperature
         idx += 1
+    return linked_data
 
 if __name__ == '__main__':
     #admissions_df = pd.read_csv(file, dtype=str)
