@@ -15,8 +15,10 @@ from utilities.get_specific_vital_sign import get_specific_vital_sign
 
 inpt_recs_path = './data/inpt_episodes.csv'
 vital_sign_path = './data/vitals.csv'
-linked_data_path = './data/linked_data.json'
-linked_data_pkl_path = './data/linked_data_raw.pkl'
+#linked_data_path = './data/linked_data.json'
+linked_data_path = './data/linked_data.pkl'
+linked_data_raw_path = './data/linked_data_raw.pkl'
+#linked_data_finished_path = './data/linked_data.pkl'
 
 def get_inpt_recs(admissions_df, save_file_path: str):
     linked_data = defaultdict(list)
@@ -41,7 +43,7 @@ def get_inpt_recs(admissions_df, save_file_path: str):
     linked_data = dict(linked_data)
     save_variable_to_pickle(variable=linked_data, file_path=save_file_path)
 
-def add_vital_sign(admissions_df, vital_sign_df, linked_data_path: str, vital_sign: str):
+def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vital_sign: str):
     admissions_df = admissions_df
 
     vital_sign_df = vital_sign_df
@@ -53,18 +55,19 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_path: str, vital_si
     
     # with open(linked_data_path, 'rb') as json_file:
     #     linked_data = json.load(json_file)
-    with open(linked_data_path, 'rb') as pkl_file:
+    with open(linked_data_raw_path, 'rb') as pkl_file:
         linked_data = pickle.load(pkl_file)     
         
     for key in linked_data.keys():
         for _dict in linked_data[key]:
             _dict[vital_sign] = []
-            
+    linked_data = dict(linked_data)
+    
     idx = 0
     for _, temp_row in specific_sign_df.iterrows():
         if idx % 10000 == 0:
             print(idx)
-        cluster_id = str(temp_row['ClusterID'])
+        cluster_id = temp_row['ClusterID']
         if cluster_id in linked_data:
             temp_record = {
                 "PerformedDateTime": temp_row['PerformedDateTime'],
@@ -86,16 +89,16 @@ if __name__ == '__main__':
     vital_sign_df = pd.read_csv(vital_sign_path)
     print("Finished reading all vital signs")
     
-    if os.path.exists(linked_data_pkl_path):
+    if os.path.exists(linked_data_raw_path):
         print("The file exists.")
     else:
         print("Start linking cluster id")
-        get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_pkl_path)
+        get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_raw_path)
         print("Finished linking cluster id")
     
     sign = 'Temperature Tympanic'
     print("Start adding adding " + sign)
-    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_path=linked_data_pkl_path, vital_sign=sign)
+    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_path=linked_data_path, vital_sign=sign)
     print("Finised adding adding " + sign)
     save_variable_to_pickle(variable=linked_data, file_path='./data/linked_data.pickle')
     #save_dict_to_json(dict_list=linked_data, file_path='./data/linked_data.json')
