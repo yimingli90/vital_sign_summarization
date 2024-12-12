@@ -85,6 +85,7 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vita
 
 if __name__ == '__main__':
     #admissions_df = pd.read_csv(file, dtype=str)
+    sign = 'Temperature Tympanic'
     admissions_df = pd.read_csv(inpt_recs_path) 
     print("Finished reading amission info")
     vital_sign_df = pd.read_csv(vital_sign_path)
@@ -100,7 +101,19 @@ if __name__ == '__main__':
     sign = 'Temperature Tympanic'
     print("Start adding adding " + sign)
     linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_raw_path=linked_data_raw_path, vital_sign=sign)
+    
     print("Finised adding adding " + sign)
+    
+    for cluster_id, admissions in linked_data.items():
+        for admission in admissions:
+            # if "Temperature Tympanic" not none
+            if "Temperature Tympanic" in admission and admission["Temperature Tympanic"]:
+                #  PerformedDateTime rank
+                admission["Temperature Tympanic"] = sorted(
+                    admission["Temperature Tympanic"],
+                    key=lambda x: x["PerformedDateTime"]
+                )
+                
     save_variable_to_pickle(variable=linked_data, file_path=linked_data_path)
     #save_dict_to_json(dict_list=linked_data, file_path='./data/linked_data.json')
 
