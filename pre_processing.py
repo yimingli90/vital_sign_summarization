@@ -7,6 +7,7 @@ Created on Mon Dec  9 11:23:28 2024
 
 import os
 import json
+import pickle
 import pandas as pd
 from collections import defaultdict
 from utilities.save_file import save_dict_to_json, save_variable_to_pickle
@@ -15,26 +16,34 @@ from utilities.get_specific_vital_sign import get_specific_vital_sign
 inpt_recs_path = './data/inpt_episodes.csv'
 vital_sign_path = './data/vitals.csv'
 linked_data_path = './data/linked_data.json'
+linked_data_pkl_path = './data/linked_data_raw.pkl'
 
 def get_inpt_recs(admissions_df, save_file_path: str):
     linked_data = defaultdict(list)
 
     admissions_df = admissions_df 
-    #admissions_df['AdmissionDate'] = pd.to_datetime(admissions_df['AdmissionDate'])
-    #admissions_df['DischargeDate'] = pd.to_datetime(admissions_df['DischargeDate'])
+    admissions_df['AdmissionDate'] = pd.to_datetime(admissions_df['AdmissionDate'])
+    admissions_df['DischargeDate'] = pd.to_datetime(admissions_df['DischargeDate'])
+    
     for _, row in admissions_df.iterrows():
         cluster_id = row['ClusterID']
-        linked_data[cluster_id].append({
-            "AdmissionDate": row['AdmissionDate'],
-            "DischargeDate": row['DischargeDate'],
-        })
-    save_dict_to_json(dict_list=linked_data, file_path=save_file_path)
+        
+        exists = any(
+            admission['AdmissionDate'] == row['AdmissionDate'] and
+            admission['DischargeDate'] == row['DischargeDate']
+            for admission in linked_data[cluster_id]
+            )
+        if not exists:
+            linked_data[cluster_id].append({
+                "AdmissionDate": row['AdmissionDate'],
+                "DischargeDate": row['DischargeDate'],
+            })
+    linked_data = dict(linked_data)
+    save_variable_to_pickle(variable=linked_data, file_path=save_file_path)
 
 def add_vital_sign(admissions_df, vital_sign_df, linked_data_path: str, vital_sign: str):
     admissions_df = admissions_df
-    admissions_df['AdmissionDate'] = pd.to_datetime(admissions_df['AdmissionDate'])
-    admissions_df['DischargeDate'] = pd.to_datetime(admissions_df['DischargeDate']) 
-     
+
     vital_sign_df = vital_sign_df
     if os.path.exists('./data/' + vital_sign + '.csv'):
        specific_sign_df = pd.read_csv('./data/' + vital_sign + '.csv')
@@ -42,8 +51,10 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_path: str, vital_si
        specific_sign_df = get_specific_vital_sign(specific_sign=vital_sign, vital_sign_df=vital_sign_df)
     specific_sign_df['PerformedDateTime'] = pd.to_datetime(specific_sign_df['PerformedDateTime'])
     
-    with open(linked_data_path, 'r') as json_file:
-        linked_data = json.load(json_file)
+    # with open(linked_data_path, 'rb') as json_file:
+    #     linked_data = json.load(json_file)
+    with open(linked_data_path, 'rb') as pkl_file:
+        linked_data = pickle.load(pkl_file)     
         
     for key in linked_data.keys():
         for _dict in linked_data[key]:
@@ -73,12 +84,12 @@ if __name__ == '__main__':
     admissions_df = pd.read_csv(inpt_recs_path) 
     vital_sign_df = pd.read_csv(vital_sign_path)
     
-    if os.path.exists(linked_data_path):
+    if os.path.exists(linked_data_pkl_path):
         print("The file exists.")
     else:
-        get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_path)
+        get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_pkl_path)
         
-    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_path=linked_data_path, vital_sign='Temperature Tympanic')
+    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_path=linked_data_pkl_path, vital_sign='Temperature Tympanic')
     save_variable_to_pickle(variable=linked_data, file_path='./data/linked_data.pickle')
     #save_dict_to_json(dict_list=linked_data, file_path='./data/linked_data.json')
 
