@@ -82,14 +82,21 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_path: str, vital_si
 if __name__ == '__main__':
     #admissions_df = pd.read_csv(file, dtype=str)
     admissions_df = pd.read_csv(inpt_recs_path) 
+    print("Finished reading amission info")
     vital_sign_df = pd.read_csv(vital_sign_path)
+    print("Finished reading all vital signs")
     
     if os.path.exists(linked_data_pkl_path):
         print("The file exists.")
     else:
+        print("Start linking cluster id")
         get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_pkl_path)
-        
-    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_path=linked_data_pkl_path, vital_sign='Temperature Tympanic')
+        print("Finished linking cluster id")
+    
+    sign = 'Temperature Tympanic'
+    print("Start adding adding " + sign)
+    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_path=linked_data_pkl_path, vital_sign=sign)
+    print("Finised adding adding " + sign)
     save_variable_to_pickle(variable=linked_data, file_path='./data/linked_data.pickle')
     #save_dict_to_json(dict_list=linked_data, file_path='./data/linked_data.json')
 
