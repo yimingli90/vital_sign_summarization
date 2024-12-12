@@ -98,9 +98,9 @@ if __name__ == '__main__':
     
     sign = 'Temperature Tympanic'
     print("Start adding adding " + sign)
-    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_path=linked_data_path, vital_sign=sign)
+    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_raw_path=linked_data_raw_path, vital_sign=sign)
     print("Finised adding adding " + sign)
-    save_variable_to_pickle(variable=linked_data, file_path='./data/linked_data.pickle')
+    save_variable_to_pickle(variable=linked_data, file_path=linked_data_path)
     #save_dict_to_json(dict_list=linked_data, file_path='./data/linked_data.json')
 
 
