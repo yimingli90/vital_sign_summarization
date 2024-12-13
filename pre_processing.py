@@ -6,19 +6,17 @@ Created on Mon Dec  9 11:23:28 2024
 """
 
 import os
-import json
 import pickle
 import pandas as pd
 from collections import defaultdict
-from utilities.save_file import save_dict_to_json, save_variable_to_pickle
+from utilities.save_file import save_variable_to_pickle
 from utilities.get_specific_vital_sign import get_specific_vital_sign
 
 inpt_recs_path = './data/inpt_episodes.csv'
 vital_sign_path = './data/vitals.csv'
-#linked_data_path = './data/linked_data.json'
 linked_data_path = './data/linked_data.pkl'
 linked_data_raw_path = './data/linked_data_raw.pkl'
-#linked_data_finished_path = './data/linked_data.pkl'
+
 
 def get_inpt_recs(admissions_df, save_file_path: str):
     linked_data = defaultdict(list)
@@ -81,13 +79,54 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vita
                     admission_record[vital_sign].append(temp_record)
                     break  # Stop checking further records for this temperature
         idx += 1
+    
+    #sort vital sign by time     
+    for cluster_id, admissions in linked_data.items():
+        for admission in admissions:
+            # if "Temperature Tympanic" not none
+            if vital_sign in admission and admission[vital_sign]:
+                #  PerformedDateTime rank
+                admission[vital_sign] = sorted(
+                    admission[vital_sign],
+                    key=lambda x: x['PerformedDateTime']
+                )    
     return linked_data
+
+def filter_admission_records(linked_data: dict):
+    # Transform the data
+    transformed_data = []
+    for patient_id, admissions in linked_data.items():
+        for admission in admissions:
+            # Check if either AdmissionDate or DischargeDate is NaT
+            if pd.isna(admission['AdmissionDate']) or pd.isna(admission['DischargeDate']):
+                continue  # Skip this admission if NaT is found
+    
+            # Filter out temperature records with NaT in PerformedDateTime (No nee this time. All the data this batch has timestamp)
+           # admission['Temperatures'] = [temp for temp in admission['Temperatures'] if not pd.isna(temp['PerformedDateTime'])]
+    
+            # Discard admissions with less than 2 valid temperature records
+            if len(admission['Temperature Tympanic']) < 2:
+                continue
+    
+            # Add patientID to each valid admission
+            admission_with_id = {
+                "patientID": patient_id,
+                **admission  # Merge the original admission dict
+            }
+            transformed_data.append(admission_with_id)
+    
+    # Resulting transformed data
+    return transformed_data
+
 
 if __name__ == '__main__':
     #admissions_df = pd.read_csv(file, dtype=str)
     sign = 'Temperature Tympanic'
+    print("Start reading admission info")
     admissions_df = pd.read_csv(inpt_recs_path) 
-    print("Finished reading amission info")
+    print("Finished reading admission info")
+    
+    print("Start reading all vital signs")
     vital_sign_df = pd.read_csv(vital_sign_path)
     print("Finished reading all vital signs")
     
@@ -101,20 +140,14 @@ if __name__ == '__main__':
     sign = 'Temperature Tympanic'
     print("Start adding adding " + sign)
     linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_raw_path=linked_data_raw_path, vital_sign=sign)
-    
     print("Finised adding adding " + sign)
-    
-    for cluster_id, admissions in linked_data.items():
-        for admission in admissions:
-            # if "Temperature Tympanic" not none
-            if "Temperature Tympanic" in admission and admission["Temperature Tympanic"]:
-                #  PerformedDateTime rank
-                admission["Temperature Tympanic"] = sorted(
-                    admission["Temperature Tympanic"],
-                    key=lambda x: x["PerformedDateTime"]
-                )
-                
     save_variable_to_pickle(variable=linked_data, file_path=linked_data_path)
+    
+    print("Start filtering admission records and correspond " + sign)
+    final_output = filter_admission_records(linked_data=linked_data)
+    print("Finished filtering admission records and correspond " + sign)
+    final_output_path = './data/' + sign + ' records.pkl'
+    save_variable_to_pickle(variable=final_output, file_path=final_output_path)
     #save_dict_to_json(dict_list=linked_data, file_path='./data/linked_data.json')
 
 
