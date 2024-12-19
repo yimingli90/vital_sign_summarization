@@ -213,26 +213,38 @@ def summarize_temperature_vitals(record, cut_in_time):
             return summary
     else:
         if last_fever_time:
+            
             afebrile_duration = (cut_in_time - last_fever_time).total_seconds() / 3600
             
             if afebrile_duration > 48:
-                if (cut_in_time - last_fever_time).days > 7:
+                print("check")
+                if (cut_in_time - first_temp_time).days > 7:
                     summary = (f"Temperature settled,"
                                     f"now fever free for {(cut_in_time - last_fever_time).days} days")
+                    return summary
                 else:
                     if float(temperatures[0]['Degree']) >= FEVER_THRESHOLD:
                         summary = (f"Temperature settled,  febrile at admission"
                                         f"now fever free for {(cut_in_time - last_fever_time).days} days")
+                        return summary
+                    else:
+                        summary = (f"Temperature settled, "
+                                        f"now fever free for {(cut_in_time - last_fever_time).days} days")
+                        return summary
+                        
             else:
-                if (cut_in_time - last_fever_time).days > 7:
-                    summary = (f"Afebrile for {afebrile_duration} hours since last fever")
-                else:
-                    if float(temperatures[0]['Degree']) >= FEVER_THRESHOLD:
-                        summary = (f"Febrile at admission, now afebrile for {afebrile_duration} hours since last fever")
+                if float(temperatures[0]['Degree']) >= FEVER_THRESHOLD:
+                    summary = (f"Febrile at admission, now afebrile for {afebrile_duration} hours since last fever")
+                    return summary
+                
+                summary = (f"Afebrile for {afebrile_duration} hours since last fever")
+                return summary
+
         else:
             summary = "Afebrile since admission"
+            return summary
         
-        return summary
+
 
  
 
