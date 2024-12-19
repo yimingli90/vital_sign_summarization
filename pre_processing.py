@@ -10,7 +10,8 @@ import pickle
 import pandas as pd
 from collections import defaultdict
 from utilities.save_file import save_variable_to_pickle
-from utilities.get_specific_vital_sign import get_specific_vital_sign
+from utilities.utilities import get_specific_vital_sign
+
 
 inpt_recs_path = './data/inpt_episodes.csv'
 vital_sign_path = './data/vitals.csv'
