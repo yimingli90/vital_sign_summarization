@@ -14,7 +14,7 @@ from utilities.utilities import random_cut_in_time, plot_records
 
 if __name__ == '__main__':
     sign  = 'Temperature Tympanic'
-    print("Vital sig is " + sign + '.')
+    print("Vital sign is " + sign + '.')
     with open ('./data/' + sign + ' records.pkl', 'rb') as f:
         sign_records = pickle.load(f)
         
@@ -41,27 +41,27 @@ if __name__ == '__main__':
     # Set a cut-in time
 
 
-    # Example usage
-    patient_records = [
-        {
-            "patientID": 456,
-            "AdmissionDate": pd.Timestamp("2023-07-10 09:00:00"),
-            "DischargeDate": pd.Timestamp("2023-07-17 18:00:00"),
-            "Temperature Tympanic": [
-                {"PerformedDateTime": pd.Timestamp("2023-07-10 10:00:00"), "Type": "Temperature Tympanic", "Degree": 36.5, "Unit": "degrees C"},
-                {"PerformedDateTime": pd.Timestamp("2023-07-11 12:00:00"), "Type": "Temperature Tympanic", "Degree": 38.7, "Unit": "degrees C"},
-                {"PerformedDateTime": pd.Timestamp("2023-07-12 14:00:00"), "Type": "Temperature Tympanic", "Degree": 36.6, "Unit": "degrees C"},
-                {"PerformedDateTime": pd.Timestamp("2023-07-13 10:00:00"), "Type": "Temperature Tympanic", "Degree": 38.9, "Unit": "degrees C"},
-                {"PerformedDateTime": pd.Timestamp("2023-07-14 16:00:00"), "Type": "Temperature Tympanic", "Degree": 38.4, "Unit": "degrees C"},
-                {"PerformedDateTime": pd.Timestamp("2023-07-15 10:00:00"), "Type": "Temperature Tympanic", "Degree": 38.9, "Unit": "degrees C"},
-                {"PerformedDateTime": pd.Timestamp("2023-07-16 16:00:00"), "Type": "Temperature Tympanic", "Degree": 38.5, "Unit": "degrees C"},
-            ],
-        }
-    ]
+    # # Example usage
+    # patient_records = [
+    #     {
+    #         "patientID": 456,
+    #         "AdmissionDate": pd.Timestamp("2023-07-10 09:00:00"),
+    #         "DischargeDate": pd.Timestamp("2023-07-17 18:00:00"),
+    #         "Temperature Tympanic": [
+    #             {"PerformedDateTime": pd.Timestamp("2023-07-10 10:00:00"), "Type": "Temperature Tympanic", "Degree": 36.5, "Unit": "degrees C"},
+    #             {"PerformedDateTime": pd.Timestamp("2023-07-11 12:00:00"), "Type": "Temperature Tympanic", "Degree": 38.7, "Unit": "degrees C"},
+    #             {"PerformedDateTime": pd.Timestamp("2023-07-12 14:00:00"), "Type": "Temperature Tympanic", "Degree": 36.6, "Unit": "degrees C"},
+    #             {"PerformedDateTime": pd.Timestamp("2023-07-13 10:00:00"), "Type": "Temperature Tympanic", "Degree": 38.9, "Unit": "degrees C"},
+    #             {"PerformedDateTime": pd.Timestamp("2023-07-14 16:00:00"), "Type": "Temperature Tympanic", "Degree": 38.4, "Unit": "degrees C"},
+    #             {"PerformedDateTime": pd.Timestamp("2023-07-15 10:00:00"), "Type": "Temperature Tympanic", "Degree": 38.9, "Unit": "degrees C"},
+    #             {"PerformedDateTime": pd.Timestamp("2023-07-16 16:00:00"), "Type": "Temperature Tympanic", "Degree": 38.5, "Unit": "degrees C"},
+    #         ],
+    #     }
+    # ]
 
-    cut_in_time = "2023-07-14 18:40:00"
-    cut_in_time = pd.Timestamp(cut_in_time)
-    summary = temp_rules.summarize_temperature_vitals(patient_records[0], cut_in_time)
-    print(f"Patient {patient_records[0]['patientID']}: {summary}")
+    # cut_in_time = "2023-07-14 18:40:00"
+    # cut_in_time = pd.Timestamp(cut_in_time)
+    # summary = temp_rules.summarize_temperature_vitals(patient_records[0], cut_in_time)
+    # print(f"Patient {patient_records[0]['patientID']}: {summary}")
         
     
