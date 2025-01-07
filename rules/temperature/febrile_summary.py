@@ -6,10 +6,20 @@ Created on Fri Jan  3 11:45:57 2025
 """
 
 from datetime import datetime, timedelta
+from . import load_decision_tree_config, THRESHOLD_TEMPERATURE
 import json
 
+
+def process_decision_tree():
+    """加载决策树/Load decision tree"""
+    decision_tree_config = load_decision_tree_config()
+    print("Decision Tree Configuration Loaded:", decision_tree_config)
+    
+    return decision_tree_config
+    
+        
 def evaluate_condition(condition, context):
-    """评估条件"""
+    """评估条件/Evaluate condition"""
     return eval(condition, {}, context)
 
 def traverse_rules(rules, context):
@@ -33,22 +43,27 @@ def traverse_rules(rules, context):
                 return false_branch.format(**context)
 
 
-def parse_temperature_data(data, cutoff_time, rule_file):
+def parse_temperature_data(data: list, cutoff_time):
     """解析体温数据并生成总结"""
     # 提取体温记录并排序
     records = sorted(data["Temperature Tympanic"], key=lambda x: x["PerformedDateTime"])
+    tmp_records = []
     for record in records:
-        record["Degree"] = float(record["Degree"])
-        record["PerformedDateTime"] = datetime.strptime(record["PerformedDateTime"], "%Y-%m-%d %H:%M:%S")
+        try:
+            record["Degree"] = float(record["Degree"])
+            tmp_records.append(record)
+        except ValueError:
+            continue
+    records = tmp_records
+    del tmp_records
     
     # 关键时间点
-    cutoff_time = datetime.strptime(cutoff_time, "%Y-%m-%d %H:%M:%S")
     start_24h = cutoff_time - timedelta(hours=24)
     start_5d = cutoff_time - timedelta(days=5)
-    admission_time = datetime.strptime(data["AdmissionDate"], "%Y-%m-%d %H:%M:%S")
+    #admission_time = data["AdmissionDate"]
     
     # 发烧计算
-    fever_records = [r for r in records if r["Degree"] > 37.8 and r["PerformedDateTime"] >= start_24h and r["PerformedDateTime"] <= cutoff_time]
+    fever_records = [r for r in records if r["Degree"] >= THRESHOLD_TEMPERATURE and r["PerformedDateTime"] >= start_24h and r["PerformedDateTime"] <= cutoff_time]
     last_fever_time = fever_records[-1]["PerformedDateTime"] if fever_records else None
     initial_fever_time = last_fever_time
     
@@ -57,7 +72,7 @@ def parse_temperature_data(data, cutoff_time, rule_file):
         for record in reversed(records):
             if record["PerformedDateTime"] < initial_fever_time - timedelta(hours=24):
                 break
-            if record["Degree"] > 37.8:
+            if record["Degree"] >= THRESHOLD_TEMPERATURE:
                 initial_fever_time = record["PerformedDateTime"]
         
         fever_duration = (last_fever_time - initial_fever_time).total_seconds() / 3600
@@ -71,6 +86,7 @@ def parse_temperature_data(data, cutoff_time, rule_file):
             extra_description = "since admission"
     else:
         fever_duration = 0
+        fever_duration_hours = 0
         days_fever = 0
         hours_ago = 0
         extra_description = ""
@@ -90,30 +106,29 @@ def parse_temperature_data(data, cutoff_time, rule_file):
     }
 
     # 加载规则文件
-    with open(rule_file, "r") as f:
-        rules = json.load(f)
+    rules = process_decision_tree()
     
     # 生成结果
     return traverse_rules(rules['check_fever'], context)
 
 
 # 示例数据
-data = {
-    "AdmissionDate": "2023-07-03 07:08:00",
-    "DischargeDate": "2023-07-09 16:30:00",
-    "Temperature Tympanic": [
-        {"PerformedDateTime": "2023-07-03 07:42:47", "Type": "Temperature Tympanic", "Degree": "38.5", "Unit": "degrees C"},
-        {"PerformedDateTime": "2023-07-04 06:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
-        {"PerformedDateTime": "2023-07-05 05:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
-        {"PerformedDateTime": "2023-07-06 04:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
-        {"PerformedDateTime": "2023-07-07 03:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
-        {"PerformedDateTime": "2023-07-07 16:01:37", "Type": "Temperature Tympanic", "Degree": "35.0", "Unit": "degrees C"},        
-        {"PerformedDateTime": "2023-07-08 02:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
-        {"PerformedDateTime": "2023-07-09 01:46:48", "Type": "Temperature Tympanic", "Degree": "38.6", "Unit": "degrees C"},
-    ]
-}
+# data = {
+#     "AdmissionDate": "2023-07-03 07:08:00",
+#     "DischargeDate": "2023-07-09 16:30:00",
+#     "Temperature Tympanic": [
+#         {"PerformedDateTime": "2023-07-03 07:42:47", "Type": "Temperature Tympanic", "Degree": "38.5", "Unit": "degrees C"},
+#         {"PerformedDateTime": "2023-07-04 06:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
+#         {"PerformedDateTime": "2023-07-05 05:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
+#         {"PerformedDateTime": "2023-07-06 04:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
+#         {"PerformedDateTime": "2023-07-07 03:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
+#         {"PerformedDateTime": "2023-07-07 16:01:37", "Type": "Temperature Tympanic", "Degree": "35.0", "Unit": "degrees C"},        
+#         {"PerformedDateTime": "2023-07-08 02:01:37", "Type": "Temperature Tympanic", "Degree": "39.0", "Unit": "degrees C"},
+#         {"PerformedDateTime": "2023-07-09 01:46:48", "Type": "Temperature Tympanic", "Degree": "38.6", "Unit": "degrees C"},
+#     ]
+# }
 
-cutoff_time = "2023-07-09 07:00:00"
-rule_file = "../decision_tree_config.json"
-result = parse_temperature_data(data, cutoff_time, rule_file)
-print(result)
+# cutoff_time = "2023-07-09 07:00:00"
+# rule_file = "../decision_tree_config.json"
+# result = parse_temperature_data(data, cutoff_time, rule_file)
+# print(result)
