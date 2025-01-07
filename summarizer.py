@@ -9,6 +9,7 @@ import pickle
 import random
 import pandas as pd
 from rules import temp_rules
+from rules.temperature import febrile_summary
 from utilities.utilities import random_cut_in_time, plot_records
 
 
@@ -35,33 +36,9 @@ if __name__ == '__main__':
     case = random.choice(sign_records)
     cut_in_time = random_cut_in_time(case)
     #cut_in_time = case_1_example_cut_in
-    summary = temp_rules.summarize_temperature_vitals(case, cut_in_time)
+    summary = febrile_summary.parse_temperature_data(data=case, cutoff_time=cut_in_time)
+    #summary = temp_rules.summarize_temperature_vitals(case, cut_in_time)
     print(f"Patient {case['patientID']}: {summary}")
     plot_records(data=case, cut_in_time=cut_in_time)
-    # Set a cut-in time
-
-
-    # # Example usage
-    # patient_records = [
-    #     {
-    #         "patientID": 456,
-    #         "AdmissionDate": pd.Timestamp("2023-07-10 09:00:00"),
-    #         "DischargeDate": pd.Timestamp("2023-07-17 18:00:00"),
-    #         "Temperature Tympanic": [
-    #             {"PerformedDateTime": pd.Timestamp("2023-07-10 10:00:00"), "Type": "Temperature Tympanic", "Degree": 36.5, "Unit": "degrees C"},
-    #             {"PerformedDateTime": pd.Timestamp("2023-07-11 12:00:00"), "Type": "Temperature Tympanic", "Degree": 38.7, "Unit": "degrees C"},
-    #             {"PerformedDateTime": pd.Timestamp("2023-07-12 14:00:00"), "Type": "Temperature Tympanic", "Degree": 36.6, "Unit": "degrees C"},
-    #             {"PerformedDateTime": pd.Timestamp("2023-07-13 10:00:00"), "Type": "Temperature Tympanic", "Degree": 38.9, "Unit": "degrees C"},
-    #             {"PerformedDateTime": pd.Timestamp("2023-07-14 16:00:00"), "Type": "Temperature Tympanic", "Degree": 38.4, "Unit": "degrees C"},
-    #             {"PerformedDateTime": pd.Timestamp("2023-07-15 10:00:00"), "Type": "Temperature Tympanic", "Degree": 38.9, "Unit": "degrees C"},
-    #             {"PerformedDateTime": pd.Timestamp("2023-07-16 16:00:00"), "Type": "Temperature Tympanic", "Degree": 38.5, "Unit": "degrees C"},
-    #         ],
-    #     }
-    # ]
-
-    # cut_in_time = "2023-07-14 18:40:00"
-    # cut_in_time = pd.Timestamp(cut_in_time)
-    # summary = temp_rules.summarize_temperature_vitals(patient_records[0], cut_in_time)
-    # print(f"Patient {patient_records[0]['patientID']}: {summary}")
-        
+    # tomorrow work: rewrite the febrile duration function in plot
     

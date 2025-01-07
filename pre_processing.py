@@ -81,7 +81,7 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vita
                     break  # Stop checking further records for this temperature
         idx += 1
     
-    #sort vital sign by time     
+    # sort vital sign by time     
     for cluster_id, admissions in linked_data.items():
         for admission in admissions:
             # if "Temperature Tympanic" not none
@@ -138,8 +138,7 @@ if __name__ == '__main__':
         get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_raw_path)
         print("Finished linking cluster id")
     
-    sign = 'Temperature Tympanic'
-    print("Start adding adding " + sign)
+    print("Start adding " + sign)
     linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_raw_path=linked_data_raw_path, vital_sign=sign)
     print("Finised adding adding " + sign)
     save_variable_to_pickle(variable=linked_data, file_path=linked_data_path)
