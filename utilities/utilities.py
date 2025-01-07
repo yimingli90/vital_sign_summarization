@@ -57,7 +57,7 @@ def plot_records(data: dict, cut_in_time):
         plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
     
     # 自动识别发热区间
-    fever_threshold = 37.5
+    fever_threshold = 37.8
     fever_intervals = []
     in_fever = False
     fever_start = None
