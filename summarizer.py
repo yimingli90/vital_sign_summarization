@@ -10,7 +10,8 @@ import random
 import pandas as pd
 from rules import temp_rules
 from rules.temperature import febrile_summary
-from utilities.utilities import random_cut_in_time, plot_records
+from utilities.utilities import random_cut_in_time
+from utilities import plot_records
 
 
 if __name__ == '__main__':
@@ -33,12 +34,15 @@ if __name__ == '__main__':
     case_2 = patients_with_long_febrile_period[0]
     case_2_example_cut_in = pd.Timestamp('2023-12-16 09:00:00')
 
-    case = random.choice(sign_records)
-    cut_in_time = random_cut_in_time(case)
-    #cut_in_time = case_1_example_cut_in
-    summary = febrile_summary.parse_temperature_data(data=case, cutoff_time=cut_in_time)
+    case_ = random.choice(sign_records)
+    cut_in_time = random_cut_in_time(case_)
+    
+    case_ = case_2
+    cut_in_time = pd.Timestamp('2023-12-11 04:00:00')
+    #cut_in_time = case_2_example_cut_in
+    summary = febrile_summary.parse_temperature_data(data=case_, cutoff_time=cut_in_time)
     #summary = temp_rules.summarize_temperature_vitals(case, cut_in_time)
-    print(f"Patient {case['patientID']}: {summary}")
-    plot_records(data=case, cut_in_time=cut_in_time)
+    print(f"Patient {case_['patientID']}: {summary}")
+    plot_records.plot_temperature_records(data=case_, cutoff_time=cut_in_time)
     # tomorrow work: rewrite the febrile duration function in plot
     

@@ -60,7 +60,7 @@ def parse_temperature_data(data: list, cutoff_time):
     # 关键时间点
     start_24h = cutoff_time - timedelta(hours=24)
     start_5d = cutoff_time - timedelta(days=5)
-    #admission_time = data["AdmissionDate"]
+    admission_time = data["AdmissionDate"]
     
     # 发烧计算
     fever_records = [r for r in records if r["Degree"] >= THRESHOLD_TEMPERATURE and r["PerformedDateTime"] >= start_24h and r["PerformedDateTime"] <= cutoff_time]
@@ -81,14 +81,30 @@ def parse_temperature_data(data: list, cutoff_time):
         days_fever = int(fever_duration // 24)
         hours_ago = int((cutoff_time - last_fever_time).total_seconds() / 3600)
         extra_description = ""
+        days_ago = 999 # appears if ther is a bug
         #if initial_fever_time <= max(admission_time, records[0]["PerformedDateTime"]):
         if initial_fever_time <= records[0]["PerformedDateTime"]:
             extra_description = "since admission"
+            
+    elif any([r['Degree'] > 37.8 for r in records if r['PerformedDateTime'] >= start_5d]):
+        last_fever_time = admission_time
+        for r in records:
+            if r['PerformedDateTime'] >= start_5d and r['Degree'] >= THRESHOLD_TEMPERATURE:
+                if r['PerformedDateTime'] >= last_fever_time:
+                    last_fever_time = r['PerformedDateTime']        
+        days_ago = (cutoff_time - last_fever_time).days
+        fever_duration = 0
+        fever_duration_hours = 0
+        days_fever = 0
+        hours_ago = 0
+        extra_description = ""
+        
     else:
         fever_duration = 0
         fever_duration_hours = 0
         days_fever = 0
         hours_ago = 0
+        days_ago = 0
         extra_description = ""
 
     # 上下文变量
@@ -102,6 +118,7 @@ def parse_temperature_data(data: list, cutoff_time):
         "last_fever_degree": fever_records[-1]["Degree"] if fever_records else None,
         "days_fever": days_fever,
         "hours_ago": hours_ago,
+        "days_ago": days_ago,
         "extra_description": extra_description
     }
 
