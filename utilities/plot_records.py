@@ -12,6 +12,8 @@ from datetime import timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
 
+THRESHOLD_TEMPERATURE = 37.8
+    
 def plot_temperature_records(data: dict, cutoff_time): 
     # 转换体温数据为 DataFrame
     temp_records = pd.DataFrame(data["Temperature Tympanic"])
@@ -28,15 +30,18 @@ def plot_temperature_records(data: dict, cutoff_time):
     # 筛选出距离 `cut-in time` 最近的 15 个数据点
     cut_in_data = temp_records[temp_records["PerformedDateTime"] <= cutoff_time]
     
-    if len(cut_in_data) > 20:
-        plot_data = cut_in_data.tail(20)
-    else:
-        # 若不足 15 点，则取 `cut-in time` 前最近 5 天的数据
-        start_time = max(data["AdmissionDate"], cutoff_time - pd.Timedelta(days=5))
-        plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
-    
+    # if len(cut_in_data) > 20:
+    #     plot_data = cut_in_data.tail(20)
+    # else:
+    #     # 若不足 15 点，则取 `cut-in time` 前最近 5 天的数据
+    #     start_time = max(data["AdmissionDate"], cutoff_time - pd.Timedelta(days=5))
+    #     plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
+    start_time = max(data["AdmissionDate"], cutoff_time - pd.Timedelta(days=5))
+    plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
+    if len(plot_data) == 0:
+        plot_data = cut_in_data.tail(2)
+
     # 发热状态判断
-    THRESHOLD_TEMPERATURE = 37.8
     fever_records = [r for _, r in temp_records.iterrows() if r["Degree"] >= THRESHOLD_TEMPERATURE  and r["PerformedDateTime"] <= cutoff_time and r["PerformedDateTime"] >= min(plot_data['PerformedDateTime'])]
     
     # 多段发热区间识别
@@ -59,23 +64,38 @@ def plot_temperature_records(data: dict, cutoff_time):
     plt.figure(figsize=(12, 6))
     
     # 按照体温阈值标注点的颜色
-    colors = ["red" if temp >= THRESHOLD_TEMPERATURE else "blue" for temp in plot_data["Degree"]]
+    # colors = ["red" if temp >= THRESHOLD_TEMPERATURE else "blue" for temp in plot_data["Degree"]]
     
-    # 绘制体温曲线，标注颜色
-    plt.scatter(plot_data["PerformedDateTime"], plot_data["Degree"], c=colors, label="Temperature Tympanic")
+    # # 绘制体温曲线，标注颜色
+    # plt.scatter(plot_data["PerformedDateTime"], plot_data["Degree"], c=colors, label="Temperature Tympanic")
+    # plt.plot(plot_data["PerformedDateTime"], plot_data["Degree"], color="gray", linestyle="-", alpha=0.5)
+    # 红色点：发热
+    high_temp_data = plot_data[plot_data["Degree"] >= THRESHOLD_TEMPERATURE]
+    plt.scatter(high_temp_data["PerformedDateTime"], high_temp_data["Degree"], color="red", label="High Temperature (≥37.8°C)")
+    
+    # 蓝色点：非发热
+    low_temp_data = plot_data[plot_data["Degree"] <= THRESHOLD_TEMPERATURE]
+    plt.scatter(low_temp_data["PerformedDateTime"], low_temp_data["Degree"], color="blue", label="Normal Temperature (<37.8°C)")
     plt.plot(plot_data["PerformedDateTime"], plot_data["Degree"], color="gray", linestyle="-", alpha=0.5)
     
+    # plt.plot(plot_data["PerformedDateTime"], plot_data["Degree"], color="gray", linestyle="-", alpha=0.8, label="Temperature Trend")
     # 绘制cut-in时间
     plt.axvline(cutoff_time, color="red", linestyle="--", label="Cut-in Time")
+    # 在cut-in时间上方标注具体时间
+    formatted_cutoff_time = cutoff_time.strftime("%Y-%m-%d %H:%M")
+    plt.text(cutoff_time, plot_data["Degree"].max() + 0.5, f"Cut-in Time\n{formatted_cutoff_time}",
+             color="red", fontsize=10, ha="center", va="bottom")
     
     # 如果检测到发热区间，绘制多段发热区间
     if fever_intervals:
         # 普通发热区间
         for i, (start, end) in enumerate(fever_intervals[:-1]):  # 不包含最后一个区间
             if start == end:
-                plt.axvline(x=start, color='orange', linestyle='-', label="Fever Interval" if i == 0 else None)
+                plt.axvline(x=start, color='orange', linestyle='-',
+                            label="Fever Interval" if i == 0 else None)
             else:
-                plt.axvspan(start, end, color="orange", alpha=0.3, label="Fever Interval" if i == 0 else None)
+                plt.axvspan(start, end, color="orange", alpha=0.3,
+                            label="Fever Interval" if i == 0 else None)
         
         # 最后一个发热区间用红色标注
         last_start, last_end = fever_intervals[-1]
@@ -90,7 +110,7 @@ def plot_temperature_records(data: dict, cutoff_time):
             plt.axvline(x=last_fever_time, color="red", linestyle="--", label="Last Fever Record")
     
     # 图表设置
-    plt.title("Patient Temperature Timeline with Highlighted Last Fever")
+    plt.title("Patient Temperature Timeline")
     plt.xlabel("Time")
     plt.ylabel("Temperature (°C)")
     plt.legend()

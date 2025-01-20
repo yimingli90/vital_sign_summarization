@@ -28,18 +28,19 @@ if __name__ == '__main__':
     # Example usage
     # Case 1: Febrile at admission, then settled
     case_1 = patients_with_long_febrile_period[88]
-    case_1_example_cut_in = pd.Timestamp('2024-03-24 01:50:53.786380805')
+    case_1_example_cut_in = pd.Timestamp('2024-03-24 01:50:53.786380805') # pd.Timestamp('2024-03-24 01:50:53.786380805')
     
     # Case 2: long in_patient record,long afebrile interval
     case_2 = patients_with_long_febrile_period[0]
-    case_2_example_cut_in = pd.Timestamp('2023-12-16 09:00:00')
+    case_2_example_cut_in = pd.Timestamp('2023-12-06 15:00:00')  # pd.Timestamp('2023-12-11 04:00:00') 
 
     case_ = random.choice(sign_records)
     cut_in_time = random_cut_in_time(case_)
     
     case_ = case_2
-    cut_in_time = pd.Timestamp('2023-12-11 04:00:00')
+    cut_in_time = case_2_example_cut_in
     #cut_in_time = case_2_example_cut_in
+    
     summary = febrile_summary.parse_temperature_data(data=case_, cutoff_time=cut_in_time)
     #summary = temp_rules.summarize_temperature_vitals(case, cut_in_time)
     print(f"Patient {case_['patientID']}: {summary}")

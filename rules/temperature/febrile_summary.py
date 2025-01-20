@@ -66,14 +66,19 @@ def parse_temperature_data(data: list, cutoff_time):
     fever_records = [r for r in records if r["Degree"] >= THRESHOLD_TEMPERATURE and r["PerformedDateTime"] >= start_24h and r["PerformedDateTime"] <= cutoff_time]
     last_fever_time = fever_records[-1]["PerformedDateTime"] if fever_records else None
     initial_fever_time = last_fever_time
+    highest_fever_degree = 0
     
     if fever_records:
         # 查找初始发烧时间
         for record in reversed(records):
+            if record["PerformedDateTime"] > cutoff_time:
+                continue
             if record["PerformedDateTime"] < initial_fever_time - timedelta(hours=24):
                 break
             if record["Degree"] >= THRESHOLD_TEMPERATURE:
                 initial_fever_time = record["PerformedDateTime"]
+                if record["Degree"] >= highest_fever_degree:
+                    highest_fever_degree = record["Degree"]
         
         fever_duration = (last_fever_time - initial_fever_time).total_seconds() / 3600
         
@@ -116,6 +121,7 @@ def parse_temperature_data(data: list, cutoff_time):
         "fever_duration": fever_duration,
         "fever_duration_hours": fever_duration_hours,
         "last_fever_degree": fever_records[-1]["Degree"] if fever_records else None,
+        "highest_fever_degree": highest_fever_degree,
         "days_fever": days_fever,
         "hours_ago": hours_ago,
         "days_ago": days_ago,
