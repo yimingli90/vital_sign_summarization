@@ -37,8 +37,7 @@ if __name__ == '__main__':
     case_ = random.choice(sign_records)
     cut_in_time = random_cut_in_time(case_)
     
-    case_ = case_2
-    cut_in_time = case_2_example_cut_in
+    #case_ = case_2
     #cut_in_time = case_2_example_cut_in
     
     summary = febrile_summary.parse_temperature_data(data=case_, cutoff_time=cut_in_time)
