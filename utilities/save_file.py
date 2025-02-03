@@ -22,4 +22,9 @@ def save_dataframe_to_csv(df, file_path):
     df.to_csv(file_path, index=False, encoding='utf-8-sig')
     print(f"Data has been saved to {file_path}")
     
+def save_text_file(data, file_path):
+    with open(file_path, 'w') as f_out:
+        f_out.write(data)
+    print(f"Data has been saved to {file_path}")
+    
 
