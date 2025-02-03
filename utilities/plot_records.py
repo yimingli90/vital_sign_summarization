@@ -5,10 +5,12 @@ Created on Mon Jan 13 10:51:12 2025
 @author: YimingL
 """
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import pandas as pd
 from datetime import timedelta
 from . import THRESHOLD_TEMPERATURE
 
+#THRESHOLD_TEMPERATURE = 37.8
     
 def plot_temperature_records(data: dict, cutoff_time): 
     """绘制体温记录/Plot patient temperature record"""
@@ -63,7 +65,7 @@ def plot_temperature_records(data: dict, cutoff_time):
     plt.scatter(high_temp_data["PerformedDateTime"], high_temp_data["Degree"], color="red", label="High Temperature (≥37.8°C)")
     
     # 蓝色点：非发热/Blue point: afebrile
-    low_temp_data = plot_data[plot_data["Degree"] <= THRESHOLD_TEMPERATURE]
+    low_temp_data = plot_data[plot_data["Degree"] < THRESHOLD_TEMPERATURE]
     plt.scatter(low_temp_data["PerformedDateTime"], low_temp_data["Degree"], color="blue", label="Normal Temperature (<37.8°C)")
     plt.plot(plot_data["PerformedDateTime"], plot_data["Degree"], color="gray", linestyle="-", alpha=0.5)
 
@@ -71,10 +73,13 @@ def plot_temperature_records(data: dict, cutoff_time):
     plt.axvline(cutoff_time, color="red", linestyle="--", label="Cut-in Time")
     if start_time == data["AdmissionDate"]:
         plt.axvline(start_time, color="blue", linestyle="--", label="Addmission Date")
+        formatted_start_time = start_time.strftime("%Y-%m-%d %H:%M")
+        plt.text(start_time, plot_data["Degree"].max() + 0.3, f"Admission Date\n{formatted_start_time}",
+                 color="blue", fontsize=10, ha="center", va="bottom")
         
     # 在cut-in时间上方标注具体时间/Mark the cut-in time
     formatted_cutoff_time = cutoff_time.strftime("%Y-%m-%d %H:%M")
-    plt.text(cutoff_time, plot_data["Degree"].max() + 0.05, f"Cut-in Time\n{formatted_cutoff_time}",
+    plt.text(cutoff_time, plot_data["Degree"].max() + 0.3, f"Cut-in Time\n{formatted_cutoff_time}",
              color="red", fontsize=10, ha="center", va="bottom")
     
     # 如果检测到发热区间，绘制多段发热区间/Plot multiple fever invtervals if exist
@@ -115,5 +120,68 @@ def plot_temperature_records(data: dict, cutoff_time):
     
     # 返回发热区间/Return fever intervals, this is not needed
     return fever_intervals
+
+
+
+def plot_temperature_records_for_reader(data: dict, cutoff_time): 
+    """绘制体温记录/Plot patient temperature record"""
+    # 转换体温数据为 DataFrame/Transform the records to DataFrame
+    temp_records = pd.DataFrame(data["Temperature Tympanic"])
+    temp_records["Degree"] = pd.to_numeric(temp_records["Degree"], errors='coerce')
+    temp_records.dropna(subset=["Degree"], inplace=True)
+    temp_records["Degree"] = temp_records["Degree"].astype(float)
+    cut_in_data = temp_records[temp_records["PerformedDateTime"] <= cutoff_time]
+    start_time = max(data["AdmissionDate"], cutoff_time - pd.Timedelta(hours=120))
+    plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
+    if len(plot_data) == 0:
+        plot_data = cut_in_data.tail(2)
+    
+    plt.figure(figsize=(12, 6))
+
+    # Plot temperature data as grey dots and lines for neutrality
+    plt.scatter(plot_data["PerformedDateTime"], plot_data["Degree"], color="blue", label="Temperature")
+    plt.plot(plot_data["PerformedDateTime"], plot_data["Degree"], color="grey", linestyle="-", alpha=0.5)
+    
+    # Draw vertical lines for cut-in time and admission date
+    plt.axvline(cutoff_time, color="red", linestyle="--", label="Cut-in Time")
+
+    if start_time == data["AdmissionDate"]:
+        plt.axvline(start_time, color="blue", linestyle="--", label="Admission Date")
+        formatted_start_time = start_time.strftime("%Y-%m-%d %H:%M")
+        plt.text(start_time, 42 + 0.2, f"Admission Date\n{formatted_start_time}",
+                 color="blue", fontsize=10, ha="center", va="bottom")
+    
+    # Add cut-in time annotation
+    formatted_cutoff_time = cutoff_time.strftime("%Y-%m-%d %H:%M")
+    plt.text(cutoff_time, 42 + 0.2, f"Cut-in Time\n{formatted_cutoff_time}",
+             color="red", fontsize=10, ha="center", va="bottom")
+    
+    # Fix y-axis range and add minor grid lines
+    plt.ylim(35, 42)  # Adjust as needed for your data range
+    plt.gca().yaxis.set_minor_locator(ticker.MultipleLocator(0.5))
+    plt.grid(which='minor', linestyle=':', linewidth=0.5)
+
+    # Fix x-axis range and add regular ticks
+    if start_time == data["AdmissionDate"]:
+        plt.xlim(start_time - pd.Timedelta(hours=1), cutoff_time)
+    else:
+        plt.xlim(start_time, cutoff_time)
+    plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d %H:%M'))
+    plt.gca().xaxis.set_major_locator(plt.matplotlib.dates.HourLocator(interval=12))  # Major ticks every 12 hours
+    #plt.gca().xaxis.set_minor_locator(plt.matplotlib.dates.HourLocator(interval=6))   # Minor ticks every 6 hours
+    plt.gcf().autofmt_xdate()  # Rotate date labels for better readability
+
+    # Chart settings
+    plt.title("Patient Temperature Timeline", fontsize=15)
+    plt.xlabel("Time")
+    plt.ylabel("Temperature (°C)")
+    plt.legend()
+    plt.grid(True, which='major', linestyle='-', linewidth=0.8)
+    plt.tight_layout()
+    
+    # Show plot
+    plt.show()
+
+
 
 
