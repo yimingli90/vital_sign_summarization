@@ -108,6 +108,16 @@ def plot_temperature_records(data: dict, cutoff_time):
             plt.axvline(x=last_fever_time, color="red", linestyle="--", label="Last Fever Record")
     
     # 图表设置/Plot settings
+    # Fix x-axis range and add regular ticks
+    if start_time == data["AdmissionDate"]:
+        plt.xlim(start_time - pd.Timedelta(hours=1), cutoff_time)
+    else:
+        plt.xlim(start_time, cutoff_time)
+    plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d %H:%M'))
+    plt.gca().xaxis.set_major_locator(plt.matplotlib.dates.HourLocator(interval=12))  # Major ticks every 12 hours
+    #plt.gca().xaxis.set_minor_locator(plt.matplotlib.dates.HourLocator(interval=6))   # Minor ticks every 6 hours
+    plt.gcf().autofmt_xdate()  # Rotate date labels for better readability
+
     plt.title("Patient Temperature Timeline", fontsize=15)
     plt.xlabel("Time")
     plt.ylabel("Temperature (°C)")
