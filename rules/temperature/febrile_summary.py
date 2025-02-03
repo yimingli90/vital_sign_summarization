@@ -90,13 +90,14 @@ def parse_temperature_data(data: list, cutoff_time):
         hours_ago = int((cutoff_time - last_fever_time).total_seconds() / 3600)
         extra_description = ""
         days_ago = 999 # Appears if ther is a bug
-        if initial_fever_time <= records[0]["PerformedDateTime"]:
+        if (initial_fever_time - records[0]["PerformedDateTime"]).total_seconds() / 3600 <= 24:
             extra_description = "since admission"
             
-    elif any([r['Degree'] > 37.8 for r in records if r['PerformedDateTime'] >= start_5d]):
-        last_fever_time = admission_time
+    elif any([r['Degree'] >= THRESHOLD_TEMPERATURE for r in records if r['PerformedDateTime'] >= start_5d and r['PerformedDateTime'] <= cutoff_time]):
+        print("CASE 4")
+        last_fever_time = admission_time # initialize
         for r in records:
-            if r['PerformedDateTime'] >= start_5d and r['Degree'] >= THRESHOLD_TEMPERATURE:
+            if r['PerformedDateTime'] >= start_5d  and r['PerformedDateTime'] <= cutoff_time and r['Degree'] >= THRESHOLD_TEMPERATURE:
                 if r['PerformedDateTime'] >= last_fever_time:
                     last_fever_time = r['PerformedDateTime']        
         days_ago = (cutoff_time - last_fever_time).days
@@ -106,13 +107,19 @@ def parse_temperature_data(data: list, cutoff_time):
         hours_ago = 0
         extra_description = ""
         
+        
     else:
+        if start_5d <= admission_time:
+            extra_description = "since admission."
+        else:
+            extra_description = ""
         fever_duration = 0
         fever_duration_hours = 0
         days_fever = 0
         hours_ago = 0
         days_ago = 0
-        extra_description = ""
+        print("CASE 5")
+        
 
     # 上下文变量/Context variables
     context = {
@@ -134,5 +141,8 @@ def parse_temperature_data(data: list, cutoff_time):
     rules = process_decision_tree()
     
     # 生成结果并返回/Generate results and return
-    return traverse_rules(rules['check_fever'], context)
+    summary = traverse_rules(rules['check_fever'], context)
+    if " 0 hours ago." in summary:
+        summary = summary.replace("0 hours ago.", "right now.")
+    return summary
 
