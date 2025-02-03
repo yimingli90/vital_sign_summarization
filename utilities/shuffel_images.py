@@ -9,6 +9,7 @@ import os
 import random
 from docx import Document
 from docx.shared import Inches
+from save_file import save_text_file
 
 def distribute_images(images_dir, num_groups=4):
     """
@@ -78,5 +79,18 @@ if __name__ == "__main__":
 
     # 为每组生成 Word 文档 (Create Word documents for each group)
     create_word_docs(grouped_images, output_folder)
-
+    
+    grpup_info = ""
+    for i, g in enumerate(grouped_images):
+        grpup_info += "GROUP " + str(i + 1) + " : " + "\n\n"
+        
+        for info in g:
+            grpup_info += info + '\n'
+        
+        grpup_info += "\n"
+    
+    
+    save_text_file(grpup_info, output_folder + "/group information")
+    
     print(f"Documents saved to {output_folder}")
+    print(f"Group information saved to {output_folder}")
