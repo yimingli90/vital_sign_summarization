@@ -35,14 +35,14 @@ if __name__ == '__main__':
     case_2_example_cut_in = pd.Timestamp('2023-12-06 15:00:00')  # pd.Timestamp('2023-12-11 04:00:00') 
     
     case_3 = patients_with_long_febrile_period[8]
-    case_3_example_cut_in = pd.Timestamp('2019-09-25 06:56:00')  # pd.Timestamp('2023-12-11 04:00:00') 
+    case_3_example_cut_in = pd.Timestamp('2019-09-30 15:00:00')  # pd.Timestamp('2023-12-11 04:00:00') 
     
     case_ = random.choice(patients_with_long_febrile_period)
     cut_in_time = random_cut_in_time(case_)
     print(patients_with_long_febrile_period.index(case_))
     
-    #case_ = case_3
-    #cut_in_time = case_3_example_cut_in
+    case_ = case_3
+    cut_in_time = case_3_example_cut_in
     
     summary = febrile_summary.parse_temperature_data(data=case_, cutoff_time=cut_in_time)
     #summary = temp_rules.summarize_temperature_vitals(case, cut_in_time)
