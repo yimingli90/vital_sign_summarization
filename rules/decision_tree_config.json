@@ -1,20 +1,20 @@
 {
     "check_fever": {
-        "condition": "any([r['Degree'] > 37.8 for r in records if r['PerformedDateTime'] >= start_24h])",
+        "condition": "any([r['Degree'] >= 37.8 for r in records if r['PerformedDateTime'] >= start_24h and r['PerformedDateTime'] <= cutoff_time])",
         "true": {
             "condition": "fever_duration <= 24",
-            "true": "New fever in the last 24 hours, up to {highest_fever_degree}ºC",
+            "true": "New fever in the last 24 hours, up to {highest_fever_degree}ºC.",
             "false": {
                 "condition": "24 < fever_duration <= 48",
-                "true": "Febrile for {fever_duration_hours} hours, last fever {last_fever_degree}ºC, {hours_ago} hours ago",
-                "false": "Consistently febrile  {extra_description} for {days_fever} days, last temperature {last_fever_degree}ºC {hours_ago} hours ago."
+                "true": "Febrile for {fever_duration_hours} hours, last fever {last_fever_degree}ºC, {hours_ago} hours ago.",
+                "false": "Consistently febrile {extra_description} for {days_fever} days, last temperature {last_fever_degree}ºC {hours_ago} hours ago."
             }
             
         },
         "false": {
-            "condition": "any([r['Degree'] > 37.8 for r in records if r['PerformedDateTime'] >= start_5d])",
-            "true": "Afebrile, last fever {days_ago} days ago",
-            "false": "Consistently afebrile"
+            "condition": "any([r['Degree'] >= 37.8 for r in records if r['PerformedDateTime'] >= start_5d and r['PerformedDateTime'] <= cutoff_time])",
+            "true": "Afebrile, last fever {days_ago} days ago.",
+            "false": "Consistently afebrile {extra_description}"
         }
     }
 }
