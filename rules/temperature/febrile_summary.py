@@ -3,8 +3,9 @@
 Created on Fri Jan  3 11:45:57 2025
 
 @author: YimingL
-"""
 
+"""
+import re
 from datetime import timedelta
 from . import load_decision_tree_config, THRESHOLD_TEMPERATURE
 
@@ -12,7 +13,7 @@ from . import load_decision_tree_config, THRESHOLD_TEMPERATURE
 def process_decision_tree():
     """加载决策树/Load decision tree"""
     decision_tree_config = load_decision_tree_config()
-    print("Decision Tree Configuration Loaded:", decision_tree_config)
+    #print("Decision Tree Configuration Loaded:", decision_tree_config)
     
     return decision_tree_config
     
@@ -20,6 +21,7 @@ def process_decision_tree():
 def evaluate_condition(condition, context):
     """评估条件/Evaluate condition"""
     return eval(condition, {}, context)
+
 
 def traverse_rules(rules, context):
     """递归遍历规则/Recursive rules traversal"""
@@ -42,6 +44,25 @@ def traverse_rules(rules, context):
                 return traverse_rules(false_branch, context)
             else:
                 return false_branch.format(**context)
+
+
+def _adjust_febrile_summary(summary: str):
+    # Regular expression to find the "Consistently febrile for X days" pattern
+    match = re.search(r'Consistently febrile for (\d+) days?', summary)
+    
+    if match:
+        days = int(match.group(1))  # Extract the number of days
+        if days > 5:
+            # Replace the specific number of days with "more than 5 days"
+            updated_summary = re.sub(r'Consistently febrile for \d+ days?', 
+                                     'Consistently febrile for more than 5 days', summary)
+            return updated_summary
+    
+    if " 0 hours ago." in summary:
+        summary = summary.replace("0 hours ago.", "right now.")
+    
+        return summary  # Return the original if no change is needed
+    return summary
 
 
 def parse_temperature_data(data: list, cutoff_time):
@@ -142,7 +163,7 @@ def parse_temperature_data(data: list, cutoff_time):
     
     # 生成结果并返回/Generate results and return
     summary = traverse_rules(rules['check_fever'], context)
-    if " 0 hours ago." in summary:
-        summary = summary.replace("0 hours ago.", "right now.")
+    summary = _adjust_febrile_summary(summary=summary)
+    
     return summary
 
