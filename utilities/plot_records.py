@@ -191,7 +191,65 @@ def plot_temperature_records_for_reader(data: dict, cutoff_time):
     
     # Show plot
     plt.show()
+    return plt, plot_data
 
 
+def plot_temperature_records_for_reader_fig(data: dict, cutoff_time):
+    """绘制体温记录/Plot patient temperature record"""
+    # 转换体温数据为 DataFrame
+    temp_records = pd.DataFrame(data["Temperature Tympanic"])
+    temp_records["Degree"] = pd.to_numeric(temp_records["Degree"], errors='coerce')
+    temp_records.dropna(subset=["Degree"], inplace=True)
+    temp_records["Degree"] = temp_records["Degree"].astype(float)
+    cut_in_data = temp_records[temp_records["PerformedDateTime"] <= cutoff_time]
+    start_time = max(data["AdmissionDate"], cutoff_time - pd.Timedelta(hours=120))
+    plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
+    if len(plot_data) == 0:
+        plot_data = cut_in_data.tail(2)
 
+    # 创建 Figure 和 Axes
+    fig, ax = plt.subplots(figsize=(12, 6))
 
+    # 绘制温度数据点和线
+    ax.scatter(plot_data["PerformedDateTime"], plot_data["Degree"], color="blue", label="Temperature")
+    ax.plot(plot_data["PerformedDateTime"], plot_data["Degree"], color="grey", linestyle="-", alpha=0.5)
+    
+    # 画 cut-in 时间和入院时间的竖线
+    ax.axvline(cutoff_time, color="red", linestyle="--", label="Cut-in Time")
+    
+    if start_time == data["AdmissionDate"]:
+        ax.axvline(start_time, color="blue", linestyle="--", label="Admission Date")
+        formatted_start_time = start_time.strftime("%Y-%m-%d %H:%M")
+        ax.text(start_time, 42 + 0.2, f"Admission Date\n{formatted_start_time}",
+                color="blue", fontsize=10, ha="center", va="bottom")
+
+    # 添加 cut-in 时间标注
+    formatted_cutoff_time = cutoff_time.strftime("%Y-%m-%d %H:%M")
+    ax.text(cutoff_time, 42 + 0.2, f"Cut-in Time\n{formatted_cutoff_time}",
+            color="red", fontsize=10, ha="center", va="bottom")
+
+    # 设置 y 轴范围和次级刻度
+    ax.set_ylim(35, 42)
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.5))
+    ax.grid(which='minor', linestyle=':', linewidth=0.5)
+
+    # 设置 x 轴范围和主刻度
+    if start_time == data["AdmissionDate"]:
+        ax.set_xlim(start_time - pd.Timedelta(hours=1), cutoff_time)
+    else:
+        ax.set_xlim(start_time, cutoff_time)
+    
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d %H:%M'))
+    ax.xaxis.set_major_locator(plt.matplotlib.dates.HourLocator(interval=12))  # 主要刻度间隔 12 小时
+    fig.autofmt_xdate()  # 旋转日期标签
+
+    # 图表标题和标签
+    ax.set_title("Patient Temperature Timeline", fontsize=15)
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Temperature (°C)")
+    ax.legend()
+    ax.grid(True, which='major', linestyle='-', linewidth=0.8)
+    fig.tight_layout()
+
+    # 返回 Figure 而不是 plt
+    return fig, plot_data
