@@ -1,0 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jan 23 18:25:17 2025
+
+@author: Yiming Li
+"""
+
+id = 90
+cut in 2018/4/2 23:00
+
+id = 31
+cut in 2023/4/22 13:44
+Febrile for 44 hours, last fever 39.0潞C, 2 hours ago.
