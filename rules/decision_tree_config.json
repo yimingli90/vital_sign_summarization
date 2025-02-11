@@ -7,7 +7,7 @@
             "false": {
                 "condition": "24 < fever_duration <= 48",
                 "true": "Febrile for {fever_duration_hours} hours, last fever {last_fever_degree}°C, {hours_ago} hours ago.",
-                "false": "Consistently febrile {extra_description} for {days_fever} days, last temperature {last_fever_degree}°C {hours_ago} hours ago."
+                "false": "Consistently febrile {extra_description} for {days_fever} days, last fever {last_fever_degree}°C {hours_ago} hours ago."
             }
             
         },

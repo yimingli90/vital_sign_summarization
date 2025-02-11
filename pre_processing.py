@@ -41,8 +41,9 @@ def get_inpt_recs(admissions_df, save_file_path: str):
             })
     linked_data = dict(linked_data)
     save_variable_to_pickle(variable=linked_data, file_path=save_file_path)
+    return linked_data
 
-def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vital_sign: str):
+def add_vital_sign(admissions_df, vital_sign_df, linked_data: dict, vital_sign: str):
     admissions_df = admissions_df
 
     vital_sign_df = vital_sign_df
@@ -54,8 +55,8 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vita
     
     # with open(linked_data_path, 'rb') as json_file:
     #     linked_data = json.load(json_file)
-    with open(linked_data_raw_path, 'rb') as pkl_file:
-        linked_data = pickle.load(pkl_file)     
+    # with open(linked_data_raw_path, 'rb') as pkl_file:
+    #     linked_data = pickle.load(pkl_file)     
         
     for key in linked_data.keys():
         for _dict in linked_data[key]:
@@ -71,7 +72,7 @@ def add_vital_sign(admissions_df, vital_sign_df, linked_data_raw_path: str, vita
             temp_record = {
                 "PerformedDateTime": temp_row['PerformedDateTime'],
                 "Type": temp_row['EventName'],
-                "Degree": temp_row['EventResult'],
+                "Value": temp_row['EventResult'],
                 "Unit": temp_row['ResultUnits']
             }
             # Check each admission record for the corresponding ClusterID
@@ -108,7 +109,7 @@ def filter_admission_records(linked_data: dict):
             # Discard admissions with less than 2 valid temperature records
             if len(admission['Temperature Tympanic']) < 2:
                 continue
-    
+            
             # Add patientID to each valid admission
             admission_with_id = {
                 "patientID": patient_id,
@@ -122,7 +123,8 @@ def filter_admission_records(linked_data: dict):
 
 if __name__ == '__main__':
     #admissions_df = pd.read_csv(file, dtype=str)
-    sign = 'Temperature Tympanic'
+    #sign = 'Temperature Tympanic'
+    sign = 'Heart Rate'
     print("Start reading admission info")
     admissions_df = pd.read_csv(inpt_recs_path) 
     print("Finished reading admission info")
@@ -132,16 +134,26 @@ if __name__ == '__main__':
     print("Finished reading all vital signs")
     
     if os.path.exists(linked_data_raw_path):
-        print("The file exists.")
+        print("Raw linked data exists.")
     else:
         print("Start linking cluster id")
-        get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_raw_path)
+        linked_data_raw = get_inpt_recs(admissions_df=admissions_df, save_file_path=linked_data_raw_path)
         print("Finished linking cluster id")
     
+    if os.path.exists(linked_data_path):
+        with open(linked_data_path, 'rb') as fr:
+            linked_data = pickle.load(fr)
+        print("Ther is a linked_data has vital signs: ")
+        print(list(linked_data[1537574][0].keys())[2:])
+    
+    else:
+        linked_data = linked_data_raw 
+        
     print("Start adding " + sign)
-    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data_raw_path=linked_data_raw_path, vital_sign=sign)
+    linked_data = add_vital_sign(admissions_df=admissions_df, vital_sign_df=vital_sign_df, linked_data=linked_data, vital_sign=sign)
     print("Finised adding adding " + sign)
     save_variable_to_pickle(variable=linked_data, file_path=linked_data_path)
+    
     
     print("Start filtering admission records and correspond " + sign)
     final_output = filter_admission_records(linked_data=linked_data)

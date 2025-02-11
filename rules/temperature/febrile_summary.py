@@ -48,13 +48,13 @@ def traverse_rules(rules, context):
 
 def _adjust_febrile_summary(summary: str):
     # Regular expression to find the "Consistently febrile for X days" pattern
-    match = re.search(r'Consistently febrile for (\d+) days?', summary)
+    match = re.search(r'Consistently febrile for (\d+) days', summary)
     
     if match:
         days = int(match.group(1))  # Extract the number of days
         if days > 5:
             # Replace the specific number of days with "more than 5 days"
-            updated_summary = re.sub(r'Consistently febrile for \d+ days?', 
+            updated_summary = re.sub(r'Consistently febrile for \d+ days', 
                                      'Consistently febrile for more than 5 days', summary)
             return updated_summary
     
