@@ -125,6 +125,7 @@ if __name__ == '__main__':
     #admissions_df = pd.read_csv(file, dtype=str)
     #sign = 'Temperature Tympanic'
     sign = 'Heart Rate'
+    sign = 'Systolic Blood Pressure'
     print("Start reading admission info")
     admissions_df = pd.read_csv(inpt_recs_path) 
     print("Finished reading admission info")
@@ -158,7 +159,7 @@ if __name__ == '__main__':
     print("Start filtering admission records and correspond " + sign)
     final_output = filter_admission_records(linked_data=linked_data)
     print("Finished filtering admission records and correspond " + sign)
-    final_output_path = './data/' + sign + ' records.pkl'
+    final_output_path = './data/' + "&".join(list(linked_data[1537574][0].keys())[2:]) + ' records.pkl'
     save_variable_to_pickle(variable=final_output, file_path=final_output_path)
     #save_dict_to_json(dict_list=linked_data, file_path='./data/linked_data.json')
 
