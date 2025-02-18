@@ -13,8 +13,9 @@ import pandas as pd
 from dotenv import load_dotenv
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from rules import temp_rules
+from rules import old_rules
 from rules.temperature import febrile_summary
+from rules.heart_rate import hr_summary
 from utilities.utilities import random_cut_in_time
 from utilities import plot_records, save_file
 from cases import get_cases
@@ -89,7 +90,8 @@ def open_ai():
             
             
 if __name__ == '__main__':
-    sign  = 'Temperature Tympanic'
+    sign = 'Temperature Tympanic'
+    sign = 'Temperature Tympanic&Heart Rate&Systolic Blood Pressure'
     print("Vital sign is " + sign + '.')
     with open ('./data/' + sign + ' records.pkl', 'rb') as f:
         sign_records = pickle.load(f)
@@ -97,7 +99,7 @@ if __name__ == '__main__':
     #Get patient records with more than 2 days febrile
     if sign == 'Temperature Tympanic':
         print("Getting patients records with long_febrile_period. ")
-        patients_with_long_febrile_period = temp_rules.get_long_febrile_records(sign_records=sign_records)
+        patients_with_long_febrile_period = old_rules.get_long_febrile_records(sign_records=sign_records)
    
     cases = get_cases()
     for case_ in cases:
@@ -117,6 +119,7 @@ if __name__ == '__main__':
             #result_string = "Admission Date: " + example['AdmissionDate'].strftime("%Y-%m-%d %H:%M:%S") + '\n\n' + result_string
             #result_string += '\n\n' + "Cut-off time: " + example['cut_in_time'].strftime("%Y-%m-%d %H:%M:%S")
             example['records'] = result_string
+            example['hr_rule_summary'] = hr_summary.parse_hr_data(data=data, cutoff_time=cut_in_time)
             
     
     llm_openai, template = open_ai()
