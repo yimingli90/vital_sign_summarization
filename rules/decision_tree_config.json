@@ -16,5 +16,23 @@
             "true": "Afebrile, last fever {days_ago} days ago.",
             "false": "Consistently afebrile {extra_description}"
         }
+    },
+    
+    "check_heart_rate": {
+        "condition": "latest_heart_rate > 130",
+        "true": "Unstable concerning heart rate, up to {latest_heart_rate} bpm.",
+        "false": {
+            "condition": "110 < latest_heart_rate <= 130",
+            "true": "Heart rate tachycardia, up to {latest_heart_rate} bpm.",
+            "false": {
+                "condition":"90 < latest_heart_rate <= 110",
+                "true": "Heart Rate raised, {latest_heart_rate} bpm.",
+                "false":{
+                    "condition": "50 < latest_heart_rate <= 90",
+                    "true": "Heart Rate Normal, {latest_heart_rate} bpm.",
+                    "false": "Heart Rate low, {latest_heart_rate} bpm." 
+                }
+            }
+        }
     }
 }
