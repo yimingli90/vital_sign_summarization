@@ -29,7 +29,7 @@ def parse_hr_data(data: list, cutoff_time):
     start_12h = cutoff_time - timedelta(hours=12)
     records_12h = [r for r in records if r['PerformedDateTime'] >= start_12h and r['PerformedDateTime'] <= cutoff_time]
     if len(records_12h) == 0:
-        return "No heart rate record"
+        return "No heart rate record", records_12h
     latest_heart_rate = int(records_12h[-1]['Value'])
     
     # 上下文变量/Context variables
@@ -41,4 +41,4 @@ def parse_hr_data(data: list, cutoff_time):
     
     # 生成结果并返回/Generate results and return
     summary = traverse_rules(rules['check_heart_rate'], context)
-    return summary
+    return summary, records_12h

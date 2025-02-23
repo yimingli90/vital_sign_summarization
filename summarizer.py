@@ -108,19 +108,22 @@ if __name__ == '__main__':
             cut_in_time = example['cut_in_time']
             human_reader_plt, df = plot_records.plot_temperature_records_for_reader_fig(data=data, cutoff_time=cut_in_time)
         
-            result_string = "\n".join(df["PerformedDateTime"].dt.strftime("%Y-%m-%d %H:%M:%S") + ": " + df["Degree"].astype(str))
+            result_string = "\n".join(df["PerformedDateTime"].dt.strftime("%Y-%m-%d %H:%M:%S") + ": " + df["Degree"].astype(str)  + "°C" )
             string_list = (df["PerformedDateTime"].dt.strftime("%Y-%m-%d %H:%M:%S") + " - " + df["Degree"].astype(str) + "°C").tolist()
                         
             
-            example['rule_summarization'] = febrile_summary.parse_temperature_data(data=data, cutoff_time=cut_in_time)
-            example['human_reader_plt'] = human_reader_plt
+            example['febrile']['febrile_rule_summarization'] = febrile_summary.parse_temperature_data(data=data, cutoff_time=cut_in_time)
+            example['febrile']['human_reader_plt'] = human_reader_plt
             example['AdmissionDate'] = data['AdmissionDate']
             example['DischargeDate'] = data['DischargeDate']
             #result_string = "Admission Date: " + example['AdmissionDate'].strftime("%Y-%m-%d %H:%M:%S") + '\n\n' + result_string
             #result_string += '\n\n' + "Cut-off time: " + example['cut_in_time'].strftime("%Y-%m-%d %H:%M:%S")
-            example['records'] = result_string
-            example['hr_rule_summary'] = hr_summary.parse_hr_data(data=data, cutoff_time=cut_in_time)
-            
+            example['febrile']['febrile_records'] = result_string
+            example['heart_rate']['hr_rule_summary'], hr_records = hr_summary.parse_hr_data(data=data, cutoff_time=cut_in_time)
+            hr_string = ""
+            for r in hr_records:
+                hr_string += r["PerformedDateTime"].strftime("%Y-%m-%d %H:%M:%S") + ": " + r["Value"] + " " + r["Unit"] + "\n"
+            example['heart_rate']['hr_records'] = hr_string
     
     llm_openai, template = open_ai()
     
