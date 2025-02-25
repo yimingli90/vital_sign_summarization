@@ -253,3 +253,124 @@ def plot_temperature_records_for_reader_fig(data: dict, cutoff_time):
 
     # 返回 Figure 而不是 plt
     return fig, plot_data
+
+
+def plot_hr_records_for_reader_fig(data: dict, cutoff_time):
+    """Plot patient heart rate record"""
+
+    hr_records = pd.DataFrame(data["Heart Rate"])
+    hr_records["Value"] = pd.to_numeric(hr_records["Value"], errors='coerce')
+    hr_records.dropna(subset=["Value"], inplace=True)
+    hr_records["Value"] = hr_records["Value"].astype(float)
+    cut_in_data = hr_records[hr_records["PerformedDateTime"] <= cutoff_time]
+    start_time = max(data["AdmissionDate"], cutoff_time - pd.Timedelta(hours=120))
+    plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
+    if len(plot_data) == 0:
+        plot_data = cut_in_data.tail(2)
+
+    # 创建 Figure 和 Axes
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # 绘制心率数据点和线
+    ax.scatter(plot_data["PerformedDateTime"], plot_data["Value"], color="blue", label="Temperature")
+    ax.plot(plot_data["PerformedDateTime"], plot_data["Value"], color="grey", linestyle="-", alpha=0.5)
+    
+    # 画 cut-in 时间和入院时间的竖线
+    ax.axvline(cutoff_time, color="red", linestyle="--", label="Cut-in Time")
+    
+    if start_time == data["AdmissionDate"]:
+        ax.axvline(start_time, color="blue", linestyle="--", label="Admission Date")
+        formatted_start_time = start_time.strftime("%Y-%m-%d %H:%M")
+        ax.text(start_time, 220 + 0.2, f"Admission Date\n{formatted_start_time}",
+                color="blue", fontsize=10, ha="center", va="bottom")
+
+    # 添加 cut-in 时间标注
+    formatted_cutoff_time = cutoff_time.strftime("%Y-%m-%d %H:%M")
+    ax.text(cutoff_time, 220 + 0.2, f"Cut-in Time\n{formatted_cutoff_time}",
+            color="red", fontsize=10, ha="center", va="bottom")
+
+    # 设置 y 轴范围和次级刻度
+    ax.set_ylim(20, 220)
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(5))
+    ax.grid(which='minor', linestyle=':', linewidth=0.5)
+
+    # 设置 x 轴范围和主刻度
+    if start_time == data["AdmissionDate"]:
+        ax.set_xlim(start_time - pd.Timedelta(hours=1), cutoff_time)
+    else:
+        ax.set_xlim(start_time, cutoff_time)
+    
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d %H:%M'))
+    ax.xaxis.set_major_locator(plt.matplotlib.dates.HourLocator(interval=12))  # 主要刻度间隔 12 小时
+    fig.autofmt_xdate()  # 旋转日期标签
+
+    # 图表标题和标签
+    ax.set_title("Patient Heart Rate Timeline", fontsize=15)
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Beats Per Minute (bpm)")
+    ax.legend()
+    ax.grid(True, which='major', linestyle='-', linewidth=0.8)
+    fig.tight_layout()
+
+    # 返回 Figure 而不是 plt
+    return fig, plot_data
+
+def plot_sbp_records_for_reader_fig(data: dict, cutoff_time):
+    """Plot patient heart rate record"""
+
+    sbp_records = pd.DataFrame(data["Systolic Blood Pressure"])
+    sbp_records["Value"] = pd.to_numeric(sbp_records["Value"], errors='coerce')
+    sbp_records.dropna(subset=["Value"], inplace=True)
+    sbp_records["Value"] = sbp_records["Value"].astype(float)
+    cut_in_data = sbp_records[sbp_records["PerformedDateTime"] <= cutoff_time]
+    start_time = max(data["AdmissionDate"], cutoff_time - pd.Timedelta(hours=120))
+    plot_data = cut_in_data[cut_in_data["PerformedDateTime"] >= start_time]
+    if len(plot_data) == 0:
+        plot_data = cut_in_data.tail(2)
+
+    # 创建 Figure 和 Axes
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # 绘制心率数据点和线
+    ax.scatter(plot_data["PerformedDateTime"], plot_data["Value"], color="blue", label="Temperature")
+    ax.plot(plot_data["PerformedDateTime"], plot_data["Value"], color="grey", linestyle="-", alpha=0.5)
+    
+    # 画 cut-in 时间和入院时间的竖线
+    ax.axvline(cutoff_time, color="red", linestyle="--", label="Cut-in Time")
+    
+    if start_time == data["AdmissionDate"]:
+        ax.axvline(start_time, color="blue", linestyle="--", label="Admission Date")
+        formatted_start_time = start_time.strftime("%Y-%m-%d %H:%M")
+        ax.text(start_time, 220 + 0.2, f"Admission Date\n{formatted_start_time}",
+                color="blue", fontsize=10, ha="center", va="bottom")
+
+    # 添加 cut-in 时间标注
+    formatted_cutoff_time = cutoff_time.strftime("%Y-%m-%d %H:%M")
+    ax.text(cutoff_time, 220 + 0.2, f"Cut-in Time\n{formatted_cutoff_time}",
+            color="red", fontsize=10, ha="center", va="bottom")
+
+    # 设置 y 轴范围和次级刻度
+    ax.set_ylim(50, 250)
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(5))
+    ax.grid(which='minor', linestyle=':', linewidth=0.5)
+
+    # 设置 x 轴范围和主刻度
+    if start_time == data["AdmissionDate"]:
+        ax.set_xlim(start_time - pd.Timedelta(hours=1), cutoff_time)
+    else:
+        ax.set_xlim(start_time, cutoff_time)
+    
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d %H:%M'))
+    ax.xaxis.set_major_locator(plt.matplotlib.dates.HourLocator(interval=12))  # 主要刻度间隔 12 小时
+    fig.autofmt_xdate()  # 旋转日期标签
+
+    # 图表标题和标签
+    ax.set_title("Systolic Blood Pressure Timeline", fontsize=15)
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Millimeters of Mercury (mmHg)")
+    ax.legend()
+    ax.grid(True, which='major', linestyle='-', linewidth=0.8)
+    fig.tight_layout()
+
+    # 返回 Figure 而不是 plt
+    return fig, plot_data

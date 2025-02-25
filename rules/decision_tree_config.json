@@ -37,20 +37,20 @@
     },
     
     "check_blood_pressure": {
-        "condition": "latest_blood_pressure > 130",
-        "true": "Unstable concerning heart rate, up to {blood_pressure} mmHG.",
+        "condition": "latest_blood_pressure <= 90",
+        "true": "Systolic blood pressure hypotension shocked, {latest_blood_pressure} mmHG.",
         "false": {
-            "condition": "110 < blood_pressure <= 130",
-            "true": "Heart rate tachycardia, up to {blood_pressure} mmHG.",
+            "condition": "91 <= latest_blood_pressure <= 100",
+            "true": "Systolic blood pressure low, {latest_blood_pressure} mmHG.",
             "false": {
-                "condition":"90 < blood_pressure <= 110",
-                "true": "Heart Rate raised, {blood_pressure} mmHG.",
+                "condition":"101 <= latest_blood_pressure <= 110",
+                "true": "Systolic Blood pressure slightly low, {latest_blood_pressure} mmHG.",
                 "false":{
-                    "condition": "50 < blood_pressure <= 90",
-                    "true": "Heart Rate Normal, {blood_pressure} mmHG.",
-                    "false": "Heart Rate low, {blood_pressure} mmHG." 
+                    "condition": "111 <= latest_blood_pressure <= 219",
+                    "true": "Systolic blood pressure normal, {latest_blood_pressure} mmHG.",
+                    "false": "Systolic blood pressure hypertensive crisis, {latest_blood_pressure} mmHG." 
                 }
             }
         }
-    },    
+    }    
 }

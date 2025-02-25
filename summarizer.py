@@ -16,33 +16,12 @@ from langchain.prompts import PromptTemplate
 from rules import old_rules
 from rules.temperature import febrile_summary
 from rules.heart_rate import hr_summary
+from rules.systolic_blood_pressure import sbp_summary
 from utilities.utilities import random_cut_in_time
 from utilities import plot_records, save_file
 from cases import get_cases
+from templates import TEMPLATE
 
-TEMPLATE = """
-Task:
-You are a doctor, please summarize the following patient temperature record concisely and clearly, focusing only on fever and afebrile status and time duration. 
-
-
-Note:
-Use only the provided temeprature information and time information. Don't make up any information that's not from the records. Please read the time data carefully.
-You need to calcluate the febrile duration and afebrile duration information by yourself, do not use a specific date and time in summarization, use terms like hours or days. Please calculate the time duration carefully. Cut-off time is the time stamp that you come to see the patient.
-
-Example Summarization Styles:
-'Febrile for 27 hours, last fever 37.8°C, 14 hours ago.'
-'Consistently febrile  for 9 days, last fever 38.0°C 3 hours ago.'
-'Afebrile, last fever 2 days ago.'
-'Consistently afebrile since admission.'
-
-
-Admission Date:
-{admission_date}
-Patient Temperature Record:
-{temperature_records}
-Cut-off Time:
-{cut_off_time}
-"""
 
 def example_usage():
     
@@ -87,6 +66,50 @@ def open_ai():
     
     return llm, template
 
+def rule_summarization(cases: list):
+    count = 0
+    for case_ in cases:
+        for example in case_:
+            print(count)
+            count += 1
+            data = patients_with_long_febrile_period[example['index']]
+            cut_in_time = example['cut_in_time']
+            human_reader_plt, df = plot_records.plot_temperature_records_for_reader_fig(data=data, cutoff_time=cut_in_time)
+        
+            result_string = "\n".join(df["PerformedDateTime"].dt.strftime("%Y-%m-%d %H:%M:%S") + ": " + df["Degree"].astype(str)  + "°C" )
+            string_list = (df["PerformedDateTime"].dt.strftime("%Y-%m-%d %H:%M:%S") + " - " + df["Degree"].astype(str) + "°C").tolist()
+                        
+            # Febrile records
+            example['febrile']['febrile_rule_summarization'] = febrile_summary.parse_temperature_data(data=data, cutoff_time=cut_in_time)
+            example['febrile']['human_reader_plt'] = human_reader_plt
+            example['AdmissionDate'] = data['AdmissionDate']
+            example['DischargeDate'] = data['DischargeDate']
+            #result_string = "Admission Date: " + example['AdmissionDate'].strftime("%Y-%m-%d %H:%M:%S") + '\n\n' + result_string
+            #result_string += '\n\n' + "Cut-off time: " + example['cut_in_time'].strftime("%Y-%m-%d %H:%M:%S")
+            example['febrile']['febrile_records'] = result_string
+            
+            # Heart rates records
+            example['heart_rate']['hr_rule_summary'], hr_records = hr_summary.parse_hr_data(data=data, cutoff_time=cut_in_time)
+            hr_string = ""
+            for r in hr_records:
+                hr_string += r["PerformedDateTime"].strftime("%Y-%m-%d %H:%M:%S") + ": " + r["Value"] + " " + r["Unit"] + "\n"
+            example['heart_rate']['hr_records'] = hr_string
+            human_reader_plt_hr, _ = plot_records.plot_hr_records_for_reader_fig(data=data, cutoff_time=cut_in_time)
+            example['heart_rate']['human_reader_plt'] = human_reader_plt_hr
+            
+            # Systolic blood pressure records
+            example['systolic_blood_pressure']['sbp_rule_summary'], sbp_records = sbp_summary.parse_sbp_data(data=data, cutoff_time=cut_in_time)
+            sbp_string = ""
+            for r in sbp_records:
+                sbp_string += r["PerformedDateTime"].strftime("%Y-%m-%d %H:%M:%S") + ": " + r["Value"] + " " + r["Unit"] + "\n"
+            example['systolic_blood_pressure']['sbp_records'] = sbp_string
+            human_reader_plt_sbp, _ = plot_records.plot_sbp_records_for_reader_fig(data=data, cutoff_time=cut_in_time)
+            example['systolic_blood_pressure']['human_reader_plt'] = human_reader_plt_sbp
+            
+            if 'normal' in example['systolic_blood_pressure']['sbp_rule_summary'] and 'normal' in example['heart_rate']['hr_rule_summary']:
+                example['cv_hmd_rule_sum'] = "Cardiovascular stable, " + example['heart_rate']['hr_rule_summary'] + " " + example['systolic_blood_pressure']['sbp_rule_summary']
+            else:
+                example['cv_hmd_rule_sum'] = example['heart_rate']['hr_rule_summary'] + "\n" + example['systolic_blood_pressure']['sbp_rule_summary']
             
             
 if __name__ == '__main__':
@@ -100,30 +123,14 @@ if __name__ == '__main__':
     if sign == 'Temperature Tympanic':
         print("Getting patients records with long_febrile_period. ")
         patients_with_long_febrile_period = old_rules.get_long_febrile_records(sign_records=sign_records)
-   
-    cases = get_cases()
-    for case_ in cases:
-        for example in case_:
-            data = patients_with_long_febrile_period[example['index']]
-            cut_in_time = example['cut_in_time']
-            human_reader_plt, df = plot_records.plot_temperature_records_for_reader_fig(data=data, cutoff_time=cut_in_time)
+        save_file.save_variable_to_pickle(variable=patients_with_long_febrile_period, file_path='./data/patients_with_long_febrile_period.pkl')
+    
+    with open('./data/patients_with_long_febrile_period.pkl', 'rb') as pk:
+        patients_with_long_febrile_period = pickle.load(pk)
         
-            result_string = "\n".join(df["PerformedDateTime"].dt.strftime("%Y-%m-%d %H:%M:%S") + ": " + df["Degree"].astype(str)  + "°C" )
-            string_list = (df["PerformedDateTime"].dt.strftime("%Y-%m-%d %H:%M:%S") + " - " + df["Degree"].astype(str) + "°C").tolist()
-                        
-            
-            example['febrile']['febrile_rule_summarization'] = febrile_summary.parse_temperature_data(data=data, cutoff_time=cut_in_time)
-            example['febrile']['human_reader_plt'] = human_reader_plt
-            example['AdmissionDate'] = data['AdmissionDate']
-            example['DischargeDate'] = data['DischargeDate']
-            #result_string = "Admission Date: " + example['AdmissionDate'].strftime("%Y-%m-%d %H:%M:%S") + '\n\n' + result_string
-            #result_string += '\n\n' + "Cut-off time: " + example['cut_in_time'].strftime("%Y-%m-%d %H:%M:%S")
-            example['febrile']['febrile_records'] = result_string
-            example['heart_rate']['hr_rule_summary'], hr_records = hr_summary.parse_hr_data(data=data, cutoff_time=cut_in_time)
-            hr_string = ""
-            for r in hr_records:
-                hr_string += r["PerformedDateTime"].strftime("%Y-%m-%d %H:%M:%S") + ": " + r["Value"] + " " + r["Unit"] + "\n"
-            example['heart_rate']['hr_records'] = hr_string
+    cases = get_cases()
+    rule_summarization(cases=cases)
+
     
     llm_openai, template = open_ai()
     
@@ -133,7 +140,6 @@ if __name__ == '__main__':
             temp_data = example['records']
             admission_date = example['AdmissionDate']
             cut_off_time = example['cut_in_time']
-            rule_sum = febrile_summary.parse_temperature_data(data=data, cutoff_time=cut_in_time)
             
             summary = llm_openai.predict(template.format(temperature_records=temp_data, admission_date=admission_date, cut_off_time=cut_off_time))
             example['open_ai_summarization'] = summary
