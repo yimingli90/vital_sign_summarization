@@ -1,0 +1,33 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Feb 25 16:49:49 2025
+
+@author: Yiming Li
+"""
+
+1. Determine if the patient is febrile at the cut-off time:
+    • Check if there is any temperature reading above 37.7°C within the 24 hours before the cut-off time.
+    • If such a reading exists, the patient is considered febrile at the cut-off time.
+    • Otherwise, the patient is considered afebrile.
+
+2. If the patient is febrile, summarize based on fever duration:
+    • Fever duration ≤ 24 hours:
+      → "New fever in the last 24 hours, up to {last_fever_degree}ºC"
+    • Fever duration between 24 and 48 hours:
+      → "Febrile for {fever_duration} hours, last fever {last_fever_degree}ºC, {hours_ago} hours ago"
+    • Fever duration > 48 hours:
+      → "Consistently febrile for {days_fever} days, last temperature {last_fever_degree}ºC {hours_ago} hours ago {extra_description}"
+      • If the fever started right at admission, append "Consistently febrile since admission".
+
+3. If the patient is afebrile:
+    • Check if there were any fevers in the 5 days prior to the cut-off time:
+        • If no fevers in the past 5 days:
+        → "Consistently afebrile"
+    • If a fever occurred within the past 5 days:
+        → "Afebrile, last fever {days_ago} days ago"
+4. Fever duration calculation:
+    • Starting from the last recorded fever before the cut-off time, trace backwards:
+        • If another fever (>37.8°C) is found within the 24 hours prior, extend the fever start time backwards.
+        • Continue until either:
+            • A 24-hour gap without fever is encountered, or
+            • The admission time is reached.

@@ -256,6 +256,7 @@ def plot_temperature_records_for_reader_fig(data: dict, cutoff_time):
 
 
 def plot_hr_records_for_reader_fig(data: dict, cutoff_time):
+    
     """Plot patient heart rate record"""
 
     hr_records = pd.DataFrame(data["Heart Rate"])

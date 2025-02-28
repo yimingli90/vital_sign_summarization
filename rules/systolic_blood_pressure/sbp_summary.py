@@ -29,7 +29,7 @@ def parse_sbp_data(data: list, cutoff_time):
     start_12h = cutoff_time - timedelta(hours=12)
     records_12h = [r for r in records if r['PerformedDateTime'] >= start_12h and r['PerformedDateTime'] <= cutoff_time]
     if len(records_12h) == 0:
-        return "No Systolic Blood Pressure record", records_12h
+        return "No systolic blood pressure record", records_12h
     latest_blood_pressure = int(records_12h[-1]['Value'])
     
     # 上下文变量/Context variables
