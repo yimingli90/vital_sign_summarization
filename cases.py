@@ -69,4 +69,6 @@ def get_cases():
             record['systolic_blood_pressure'] = {}
             record['cv_hmd_rule_sum'] = ''
             record['vs_records'] = ''
+            record['ds_resoning'] = ''
+            record['ds_summary_all'] = ''
     return cases

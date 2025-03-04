@@ -20,7 +20,7 @@ from rules.systolic_blood_pressure import sbp_summary
 from utilities.utilities import random_cut_in_time
 from utilities import plot_records, save_file
 from cases import get_cases
-from templates import TEMPLATE, TEMPLATE_SUMMARY_RULES
+
 
 
 def example_usage():

@@ -7,99 +7,71 @@ Created on Wed Feb 26 10:52:17 2025
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-from templates import TEMPLATE
-
+from templates import TEMPLATE_TITE
+from docx import Document
+from docx.shared import Inches, RGBColor
 load_dotenv()
 deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 
 # Replace with your OpenAI API key
 client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
 
-# Patient Data
-patient_data = """
-Admission Date: 2019/8/7 20:19
-Discharge Date: 2019/9/30 18:44
 
-Temperature Records:
-- 2019-09-14 06:41:16: 38.5°C
-- 2019-09-14 08:49:27: 37.2°C
-- 2019-09-14 11:12:43: 36.9°C
-- 2019-09-14 11:39:35: 36.9°C
-- 2019-09-14 13:47:16: 37.5°C
-- 2019-09-14 18:32:44: 36.4°C
-- 2019-09-14 22:53:34: 37.6°C
-- 2019-09-15 06:50:40: 37.9°C
-- 2019-09-15 10:38:21: 37.7°C
-- 2019-09-15 13:47:23: 37.3°C
-- 2019-09-15 19:29:48: 36.6°C
-- 2019-09-15 23:09:34: 37.4°C
-- 2019-09-16 06:50:13: 37.8°C
-- 2019-09-16 10:30:28: 37.8°C
-- 2019-09-16 15:18:01: 36.8°C
-- 2019-09-16 18:01:49: 36.9°C
-- 2019-09-16 18:57:36: 37.3°C
-- 2019-09-16 22:47:15: 37.0°C
-- 2019-09-17 06:38:50: 38.3°C
-- 2019-09-17 10:52:23: 35.6°C
-- 2019-09-17 10:53:16: 35.6°C
-- 2019-09-17 14:06:07: 38.0°C
-- 2019-09-17 16:05:02: 36.8°C
-- 2019-09-17 17:20:17: 36.1°C
-- 2019-09-17 22:31:40: 38.8°C
-- 2019-09-18 02:00:37: 37.1°C
-- 2019-09-18 06:09:42: 37.3°C
-- 2019-09-18 08:10:49: 37.8°C
-- 2019-09-18 10:32:19: 37.3°C
-- 2019-09-18 14:20:37: 38.3°C
-- 2019-09-18 18:23:05: 36.4°C
-- 2019-09-18 21:43:36: 36.8°C
-- 2019-09-19 02:10:20: 36.5°C
-- 2019-09-19 05:09:33: 38.3°C
 
-Cut-off Time: 2019/9/19 6:00
-"""
-
-# Fever Identification Rules
-fever_rules = """
-1. Determine if the patient is febrile at the cut-off time:
-    • Check if there is any temperature reading above 37.7°C within the 24 hours before the cut-off time.
-    • If such a reading exists, the patient is considered febrile at the cut-off time.
-    • Otherwise, the patient is considered afebrile.
-
-2. If the patient is febrile, summarize based on fever duration:
-    • Fever duration ≤ 24 hours:
-      → "New fever in the last 24 hours, up to {last_fever_degree}ºC"
-    • Fever duration between 24 and 48 hours:
-      → "Febrile for {fever_duration} hours, last fever {last_fever_degree}ºC, {hours_ago} hours ago"
-    • Fever duration > 48 hours:
-      → "Consistently febrile for {days_fever} days, last temperature {last_fever_degree}ºC {hours_ago} hours ago {extra_description}"
-      • If the fever started right at admission, append "Consistently febrile since admission".
-
-3. If the patient is afebrile:
-    • Check if there were any fevers in the 5 days prior to the cut-off time:
-        • If no fevers in the past 5 days:
-        → "Consistently afebrile"
-    • If a fever occurred within the past 5 days:
-        → "Afebrile, last fever {days_ago} days ago"
-4. Fever duration calculation:
-    • Starting from the last recorded fever before the cut-off time, trace backwards:
-        • If another fever record (>37.7°C) is found within the 24 hours prior (include 24 hours), extend the fever start time backwards to this record.
-        • Continue until either:
-            • A 24-hour gap without fever is encountered, or
-            • The admission time is reached.
-"""
-
-# OpenAI API Call using new client structure
-response = client.chat.completions.create(
-    model="deepseek-reasoner",
-    messages=[
-        {"role": "system", "content": "You are a clinical data analyst specialized in interpreting patient temperature records."},
-        {"role": "user", "content": TEMPLATE.format(patient_data=patient_data)}
-    ],
-    temperature=0  # deterministic output
-)
 
 # Output Result
+i = 0
+for example in cases[1]:
+    print(i)
+    i += 1
+    example = cases[1][2]
+    cut_in_time = example['cut_in_time']
+    patient_data = example['vs_records']
+    
+    response = client.chat.completions.create(
+        model="deepseek-reasoner",
+        messages=[
+            {"role": "system", "content": "You are a clinical data analyst specialized in interpreting patient temperature records."},
+            {"role": "user", "content": TEMPLATE_TITE.format(cut_in_time=cut_in_time, patient_data=patient_data)}
+        ],
+        temperature=0  # deterministic output
+    )
 
-fever_summary = response.choices[0].message.content
-print("Fever Summary:", fever_summary)
+    resoning  = response.choices[0].message.reasoning_content
+    summary = response.choices[0].message.content
+    example['ds_resoning'] = resoning
+    example['ds_summary_all'] = summary
+print("Summary:", summary)
+
+for j, item in enumerate(case[1]):  # 遍历每组 8 个记录
+
+    openai_summary_rules = item["rule_summarization"]
+    ds_summary = item["ds_summary_all"]
+
+    # 添加记录标题
+    doc.add_heading(f"Record {j+1}", level=2)
+
+    # 创建一个新段落
+    p = doc.add_paragraph()
+
+    # 插入 "Rule Summarization:" 并设置蓝色
+    run_rule = p.add_run("GPT-4o-mini Summarization (Summarize Rules): ")
+    run_rule.font.color.rgb = RGBColor(0, 0, 255)  # 蓝色
+
+    # 插入规则总结文本（默认颜色）
+    p.add_run(openai_summary_rules + "\n")
+
+    # 插入 "GPT-4 Summarization:" 并设置蓝色
+    run_gpt = p.add_run("DeepSeek Summarization (Summarize Data): ")
+    run_gpt.font.color.rgb = RGBColor(0, 0, 255)  # 蓝色
+
+    # 插入 GPT-4 总结文本（默认颜色）
+    p.add_run(ds_summary + "\n")
+
+
+
+# **保存 Word 文档**
+output_folder='./data/summarization/Three Signs'
+output_path = os.path.join(output_folder, f"Group_{i+1}.docx")
+doc.save(output_path)
+print(f"✅ Saved: {output_path}")
