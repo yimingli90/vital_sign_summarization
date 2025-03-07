@@ -3,34 +3,34 @@
         "condition": "any([r['Degree'] >= 37.8 for r in records if r['PerformedDateTime'] >= start_24h and r['PerformedDateTime'] <= cutoff_time])",
         "true": {
             "condition": "fever_duration <= 24",
-            "true": "New fever in the last 24 hours, {highest_fever_degree}°C.",
+            "true": "New fever in the last 24 hours, up to {highest_fever_degree}°C.",
             "false": {
                 "condition": "24 < fever_duration <= 48",
-                "true": "Febrile for {fever_duration_hours} hours, last spike {last_fever_degree}°C, {hours_ago} hours ago.",
-                "false": "Febrile for {days_fever} days, last spike {last_fever_degree}°C."
+                "true": "Febrile for {fever_duration_hours} hours, last fever {last_fever_degree}°C, {hours_ago} hours ago.",
+                "false": "Consistently febrile {extra_description} for {days_fever} days, last fever {last_fever_degree}°C {hours_ago} hours ago."
             }
             
         },
         "false": {
             "condition": "any([r['Degree'] >= 37.8 for r in records if r['PerformedDateTime'] >= start_5d and r['PerformedDateTime'] <= cutoff_time])",
-            "true": "Afebrile, last spike {days_ago} days ago.",
-            "false": "Afebrile {extra_description}"
+            "true": "Afebrile, last fever {days_ago} days ago.",
+            "false": "Consistently afebrile {extra_description}"
         }
     },
     
     "check_heart_rate": {
         "condition": "latest_heart_rate > 130",
-        "true": "Unstable concerning HR, {latest_heart_rate} bpm.",
+        "true": "Unstable concerning heart rate, {latest_heart_rate} bpm.",
         "false": {
             "condition": "110 < latest_heart_rate <= 130",
-            "true": "HR tachycardia, {latest_heart_rate} bpm.",
+            "true": "Heart rate tachycardia, {latest_heart_rate} bpm.",
             "false": {
                 "condition":"90 < latest_heart_rate <= 110",
-                "true": "HR raised, {latest_heart_rate} bpm.",
+                "true": "Heart rate raised, {latest_heart_rate} bpm.",
                 "false":{
                     "condition": "50 < latest_heart_rate <= 90",
-                    "true": "HR, {latest_heart_rate} bpm.",
-                    "false": "HR low, {latest_heart_rate} bpm."
+                    "true": "Heart rate normal, {latest_heart_rate} bpm.",
+                    "false": "Heart rate low, {latest_heart_rate} bpm." 
                 }
             }
         }
@@ -38,17 +38,17 @@
     
     "check_blood_pressure": {
         "condition": "latest_blood_pressure <= 90",
-        "true": "SBP hypotension shocked, {latest_blood_pressure} mmHG.",
+        "true": "Systolic blood pressure hypotension shocked, {latest_blood_pressure} mmHG.",
         "false": {
             "condition": "91 <= latest_blood_pressure <= 100",
-            "true": "SBP low, {latest_blood_pressure} mmHG.",
+            "true": "Systolic blood pressure low, {latest_blood_pressure} mmHG.",
             "false": {
                 "condition":"101 <= latest_blood_pressure <= 110",
-                "true": "SBP slightly low, {latest_blood_pressure} mmHG.",
+                "true": "Systolic Blood pressure slightly low, {latest_blood_pressure} mmHG.",
                 "false":{
                     "condition": "111 <= latest_blood_pressure <= 219",
-                    "true": "SBP stable, {latest_blood_pressure} mmHG.",
-                    "false": "SBP hypertensive crisis, {latest_blood_pressure} mmHG."
+                    "true": "Systolic blood pressure normal, {latest_blood_pressure} mmHG.",
+                    "false": "Systolic blood pressure hypertensive crisis, {latest_blood_pressure} mmHG." 
                 }
             }
         }
