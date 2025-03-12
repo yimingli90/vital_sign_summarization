@@ -17,6 +17,7 @@ inpt_recs_path = './data/inpt_episodes.csv'
 vital_sign_path = './data/vitals.csv'
 linked_data_path = './data/linked_data.pkl'
 linked_data_raw_path = './data/linked_data_raw.pkl'
+micro_record_raw_path = './data/micro.csv'
 
 
 def get_inpt_recs(admissions_df, save_file_path: str):
