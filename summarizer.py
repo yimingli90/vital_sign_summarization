@@ -75,6 +75,7 @@ def rule_summarization(cases: list):
             cut_in_time = example['cut_in_time']
             example['AdmissionDate'] = data['AdmissionDate']
             example['DischargeDate'] = data['DischargeDate']
+            example['patientID'] = data['patientID']
             
             # Febrile records
             human_reader_plt, df = plot_records.plot_temperature_records_for_reader_fig(data=data, cutoff_time=cut_in_time)

@@ -14,7 +14,7 @@ from docx.shared import Inches, RGBColor
 
 
 # vital_sign_sum = cases[0][0]['febrile']['febrile_rule_summarization']
-with open('./data/cases_ds.pkl', 'rb') as pkl:
+with open('./data/cases_micro.pkl', 'rb') as pkl:
     cases = pickle.load(pkl)
 # vital_sign_sum = cases[0][0]['febrile']['febrile_rule_summarization'] + '\n' + cases[0][0]['heart_rate']['hr_rule_summary'] + '\n' + cases[0][0]['systolic_blood_pressure']['sbp_rule_summary']
 
@@ -105,7 +105,8 @@ for i, case_ in enumerate(cases):
             example[key]['human_reader_plt'].savefig(os.path.join(out_put_folder[key], f"group_{i+1}_record_{j+1}.png"), dpi=150)  # 保存图片到本地
         rule_sum = example['febrile']['febrile_rule_summarization'] + '\n' + example['cv_hmd_rule_sum']
         ds_sum = example['ds_summary_all']
-
+        micro_sum = example['micro_summary']
+        
         patient1 = {
             "Consult reason": "Positive blood cultures",
             "*Diagnosis**": "E coli bacteraemia, presumed urinary source",
@@ -115,7 +116,7 @@ for i, case_ in enumerate(cases):
             "Vital signs rules": rule_sum,
             "Vital signs ds": ds_sum,
             "Physical exam": "Abdo soft and non tender",
-            "Micro results": "26/2 -- BC -- E coli, sens pending\n26/2 -- CSU -- no growth (sent after starting antibiotics)",
+            "Micro results": micro_sum,
             "Blood results": "28/2 WCC 14 (falling, from 20 on 26/2); CRP 150 (from 300 on 26/2)",
             "Imaging": [  # 多张图片示例
                 os.path.join(out_put_folder['febrile'], f"group_{i + 1}_record_{j + 1}.png"),
