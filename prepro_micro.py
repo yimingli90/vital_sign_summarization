@@ -11,7 +11,7 @@ import re
 from utilities import save_file
 from datetime import datetime
 
-with open('./data/cases_ds.pkl', 'rb') as pk:
+with open('./data/cases_rules.pkl', 'rb') as pk:
     cases = pickle.load(pk)
     
 with open('./data/patients_with_long_febrile_period.pkl', 'rb') as pk:
@@ -39,6 +39,17 @@ filtered_df = df[
     df["BugCode"].isna()
 ]
 
+filtered_df = df[
+    df["TestName"].str.contains("RESULT", case=False, na=False) &
+    df["DrugName"].isna() &
+    ~df["ResultFull"].str.contains("GROWTH", case=False, na=False) &
+    df["BugCode"].isna()
+]#Not No Negative in it. have both negative and negative then write spenc
+
+filtered_df = df[
+    df["ResultFull"].str.contains("positive", case=False, na=False) &
+    df["ResultFull"].str.contains("negative", case=False, na=False)
+]#Not No Negative
 import pandas as pd
 import re
 from io import StringIO
@@ -153,10 +164,15 @@ for case_ in cases:
             (df["CollectionDateTime"] >= admission_date) &
             (df["CollectionDateTime"] <= cut_in_time)
         ]
-
-        # 转换 DataFrame 为 list，每行变成一个字典
-        example["micro_records"] = matched_df.to_dict(orient="records")
         
+        matched_df_1y = df[
+            (df["ClusterID"] == patient_id) &
+            (df["CollectionDateTime"] >= admission_date - pd.DateOffset(years=1)) &
+            (df["CollectionDateTime"] < admission_date)
+        ]
+        # 转换 DataFrame 为 list，每行变成一个字典
+        example["micro_records"] = matched_df
+        example["micro_records_1y"] = matched_df_1y
 # 遍历 data_list
 for case_ in cases:
     for example in case_:
