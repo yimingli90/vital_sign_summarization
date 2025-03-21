@@ -14,7 +14,7 @@ from docx.shared import Inches, RGBColor
 
 
 # vital_sign_sum = cases[0][0]['febrile']['febrile_rule_summarization']
-with open('./data/cases_micro.pkl', 'rb') as pkl:
+with open('./data/cases_micro_ds.pkl', 'rb') as pkl:
     cases = pickle.load(pkl)
 # vital_sign_sum = cases[0][0]['febrile']['febrile_rule_summarization'] + '\n' + cases[0][0]['heart_rate']['hr_rule_summary'] + '\n' + cases[0][0]['systolic_blood_pressure']['sbp_rule_summary']
 
@@ -80,7 +80,7 @@ def add_section(doc, data):
                 right_cell.text = "-"
                 set_cell_font(right_cell)
 
-        elif key == "Vital signs rules" or key == "Vital signs ds":  # Background栏颜色处理
+        elif key == "Vital signs rules" or key == "Vital signs ds"or key == "Micro results":  # Background栏颜色处理
             right_cell.text = ""
             lines = value.split("\n")
             for line in lines:
@@ -105,7 +105,7 @@ for i, case_ in enumerate(cases):
             example[key]['human_reader_plt'].savefig(os.path.join(out_put_folder[key], f"group_{i+1}_record_{j+1}.png"), dpi=150)  # 保存图片到本地
         rule_sum = example['febrile']['febrile_rule_summarization'] + '\n' + example['cv_hmd_rule_sum']
         ds_sum = example['ds_summary_all']
-        micro_sum = example['micro_summary']
+        micro_sum = example['micro_final_results']
         
         patient1 = {
             "Consult reason": "Positive blood cultures",

@@ -4,6 +4,29 @@ Created on Mon Feb 24 16:03:50 2025
 
 @author: YimingL
 """
+TEMPLATE_MICRO = """
+For the following Microbiology results, if the result is definitive, return Negative or Positive. If the result is unclear or lacks specific findings, return No clear Result and summarize the ResultFull in ≤10 words:
+
+##PMicrobiology results:
+
+TestName:
+{test_name}
+
+SpecimenFull:
+{specimen_full}
+
+ResultFull:
+{result_full}
+
+##Key Rules:
+
+Output format: **Negative**, **Positive**, or **No clear Result** + **Summary:** [concise phrase].
+
+Prioritize detecting pathogens; ignore disclaimers about sample limitations.
+
+Focus on microbiological findings (e.g., "no organisms seen" → Negative).
+"""
+
 
 TEMPLATE_TEST = """
 ## Task:
