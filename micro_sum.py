@@ -10,14 +10,10 @@ import time
 import pandas as pd
 import re
 import os
+from llm import deepseek
 from utilities import save_file
 from datetime import datetime
-from openai import OpenAI
-from dotenv import load_dotenv
 from templates import TEMPLATE_MICRO
-
-load_dotenv()
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 PATIENTS_INFO = './data/patients_with_long_febrile_period.pkl'
 CASES_DS = './data/cases_ds.pkl'
@@ -31,11 +27,10 @@ def _get_micro_df():
     
     # Remove non-sense results
     df_filtered = df[
-        ~df['BatTestName'].str.contains('NOT TESTED', na=False) &
+        ~df['TestName'].str.contains('NOT TESTED', na=False) &
         ~df['ResultFull'].str.contains('DO NOT REPORT', na=False) &
-        ~df["Result"].str.contains('DEL', na=False) &
-        ~df["Result"].str.fullmatch("NONE", na=False) &
-        ~df["TestName"].str.fullmatch("COMMENT", na=False)
+        ~df["Result"].str.contains('DEL', na=False)
+        # ~df["TestName"].str.fullmatch("COMMENT", na=False)
     ].copy()
     
     return df_filtered
@@ -127,18 +122,98 @@ def _process_abx_info(df):
 def _process_other_info(df):
     """Processing other micro results info"""
     
-    ds_reasoning = ""
-    
     other_df = df[
         df['DrugName'].isna() & 
         df['DrugResult'].isna() &
-        (df['TestName'].notna() | df['BatTestName'].notna())
+        (df['TestName'].notna() | df['BatTestName'].notna()) &
+        ~df["ResultFull"].str.contains("GROWTH", case=False, na=False)
     ].copy() 
-
     other_df['Date'] = other_df['CollectionDateTime'].dt.strftime('%d/%m/%y')
-    
-    
 
+    def determine_result(row):
+        """"Return the determined result, with other results confirmed by the LLM"""
+        
+        reasoning = ""
+        if "DET" == row["Result"]:
+            return reasoning + "!!@@##" + "Positive"
+        if "NDET" == row["Result"] or "NEG" == row["Result"] or "NONE" == row["Result"] or "NONS" == row["Result"]:
+            return reasoning + "!!@@##" + "Negative"   
+        if "positive" in row['ResultFull'].lower() and "negative" in row['ResultFull'].lower():
+            return reasoning + "!!@@##" + row["SpecimenFull"] + ' ' + row["ResultFull"]
+        if row["TestName"] == "RESULT":
+            test_name = row["BatTestName"]
+        else:
+            test_name = row["TestName"]
+        
+        specimen_full = row["SpecimenFull"]
+        test_name = ""
+        result_full = row['ResultFull']
+        
+        content = TEMPLATE_MICRO.format(test_name=test_name, specimen_full = specimen_full, result_full=result_full)
+        reasoning, summary = deepseek.call(content=content)
+        
+        return reasoning + "!!@@##" + summary
+    
+    result = determine_result
+    other_df['FinalResult'] = other_df.apply(result, axis=1)
+    split_df = other_df['FinalResult'].str.split("!!@@##", expand=True)
+    other_df['ResultReasoning'] = split_df[0]
+    other_df['FinalResult'] = split_df[1]
+    
+    other_sum_list = []
+    for _, row in other_df.iterrows():
+        if "No clear Result" in row['FinalResult']:
+            continue
+        sample_type = row['BatTestName'] if row['TestName'] == 'RESULT' else row['TestName']
+        dd_mm = '/'.join(row['Date'].split('/')[:2])
+        other_sum_list.append(f"{dd_mm} – {sample_type} – {row['FinalResult']}")
+    other_sum = '\n'.join(other_sum_list)
+        
+    # Result with "GROWTH" in it will be processed separately
+    growth_df = df[
+        df['DrugName'].isna() & 
+        df['DrugResult'].isna() &
+        (df['TestName'].notna() | df['BatTestName'].notna()) &
+        df["ResultFull"].str.contains("GROWTH", case=False, na=False)
+    ].copy()
+    growth_df['Date'] = growth_df['CollectionDateTime'].dt.strftime('%d/%m/%y')
+    growth_df["CollectionDate"] = pd.to_datetime(growth_df["CollectionDateTime"]).dt.date
+    grouped = growth_df.groupby(["CollectionDate", "BatTestName"]).agg({
+    "SpecimenFull": lambda x: list(x),  # 合并为列表
+    "ResultFull": lambda x: list(x)     # 合并为列表
+}).reset_index()
+    
+    def clean_result(result):
+        match_ = re.search(r"NO GROWTH AFTER (\d+) (DAYS|WEEKS)", result)
+        if match_:
+            time_value = int(match_.group(1))
+            time_unit = match_.group(2)
+            
+            # >= 5 DAYS
+            if (time_unit == "DAYS" and time_value >= 5) or (time_unit == "WEEKS" and time_value >= 1):
+                # return "NO GROWTH"
+                return result.replace(match_.group(0), "NO GROWTH.") # Only change the "NO GROWTH AFTER X DAYS/WEEKS" part
+        return result
+    
+    # 
+    def summarize_row(row):
+        date = pd.to_datetime(row["CollectionDate"]).strftime("%d/%m")  # 格式化日期
+        test_name = row["BatTestName"]
+        specimens = row["SpecimenFull"]
+        results = [clean_result(result) for result in row["ResultFull"]]  # 处理结果文本
+        
+        # 组合 SpecimenFull 和 ResultFull
+        summary_parts = [f"– {specimen} – {result}" for specimen, result in zip(specimens, results)]
+        summary = f"{date} –  {test_name} " + " \n" + " \n".join(summary_parts)
+        summary = summary.replace("– BLOOD FOR CULTURE", "– ")
+        return summary
+    
+    grouped["Summary"] = grouped.apply(summarize_row, axis=1)
+    growth_sum = "\n".join(grouped["Summary"].tolist())
+    
+    sum_ = growth_sum + '\n' + other_sum
+    
+    return sum_, growth_df, grouped
 
 def _add_micro_results(flag:str, cases):
     """Add micro results to the eaxmples"""
@@ -158,8 +233,10 @@ def _add_micro_results(flag:str, cases):
                 example["micro_info"]["abx_results"] = abx_results
                 example["micro_info"]["abx_all"] = abx_all
             else:
-                other_results = _process_other_info(df=example["micro_records"])
+                other_results, growth_df, other_df = _process_other_info(df=example["micro_info"]["micro_records"])
                 example["micro_info"]["other_results"] = other_results
+                example["micro_info"]["growth_df"] = growth_df
+                example["micro_info"]["other_df"] = other_df
 
             count += 1
     
@@ -171,3 +248,9 @@ if __name__ == '__main__':
     _add_micro_results(flag="other", cases=cases)
     # 下一步内容： 对于abxresult 需要用list保存所有数据，输出数据只有positive或者all negative
     
+# filtered_df = micro_df[
+#    #~micro_df["TestName"].str.contains("RESULT", case=False, na=False) &
+#     micro_df["ResultFull"].str.contains("GROWTH", case=False, na=False) &
+#     micro_df["ResultFull"].str.contains("day", case=False, na=False)
+#   #  micro_df["BatTestName"].str.contains("COMMENT", case=False, na=False)
+# ]
