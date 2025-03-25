@@ -244,7 +244,9 @@ def _add_micro_results(flag:str, cases):
 if __name__ == '__main__':
     micro_df = _get_micro_df()
     cases = _add_micro_df(micro_df)
+    print("Adding abx info")
     _add_micro_results(flag="abx", cases=cases)
+    print("Adding other info")
     _add_micro_results(flag="other", cases=cases)
     # 下一步内容： 对于abxresult 需要用list保存所有数据，输出数据只有positive或者all negative
     
