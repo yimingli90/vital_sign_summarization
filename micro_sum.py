@@ -213,7 +213,7 @@ def _process_other_info(df):
     
     sum_ = growth_sum + '\n' + other_sum
     
-    return sum_, growth_df, grouped
+    return sum_, grouped, other_df
 
 def _add_micro_results(flag:str, cases):
     """Add micro results to the eaxmples"""
