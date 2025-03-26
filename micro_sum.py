@@ -155,14 +155,20 @@ def _process_other_info(df):
         return reasoning + "!!@@##" + summary
     
     result = determine_result
-    other_df['FinalResult'] = other_df.apply(result, axis=1)
-    split_df = other_df['FinalResult'].str.split("!!@@##", expand=True)
-    other_df['ResultReasoning'] = split_df[0]
-    other_df['FinalResult'] = split_df[1]
+    
+    if not other_df.empty:
+        other_df['FinalResult'] = other_df.apply(result, axis=1)
+        split_df = other_df['FinalResult'].str.split("!!@@##", expand=True)
+        other_df['ResultReasoning'] = split_df[0]
+        other_df['FinalResult'] = split_df[1]
+    else:
+        other_df['FinalResult'] = ''
+        other_df['ResultReasoning'] = ''
+        other_df['FinalResult'] = ''   
     
     other_sum_list = []
     for _, row in other_df.iterrows():
-        if "No clear Result" in row['FinalResult']:
+        if "No clear Result" in row['FinalResult'] or not row['FinalResult']:
             continue
         sample_type = row['BatTestName'] if row['TestName'] == 'RESULT' else row['TestName']
         dd_mm = '/'.join(row['Date'].split('/')[:2])
@@ -206,10 +212,14 @@ def _process_other_info(df):
         summary_parts = [f"– {specimen} – {result}" for specimen, result in zip(specimens, results)]
         summary = f"{date} –  {test_name} " + " \n" + " \n".join(summary_parts)
         summary = summary.replace("– BLOOD FOR CULTURE", "– ")
+    
         return summary
     
-    grouped["Summary"] = grouped.apply(summarize_row, axis=1)
-    growth_sum = "\n".join(grouped["Summary"].tolist())
+    if not grouped.empty:
+        grouped["Summary"] = grouped.apply(summarize_row, axis=1)
+        growth_sum = "\n".join(grouped["Summary"].tolist())
+    else:
+        grouped["Summary"] = ''
     
     sum_ = growth_sum + '\n' + other_sum
     
@@ -248,6 +258,11 @@ if __name__ == '__main__':
     _add_micro_results(flag="abx", cases=cases)
     print("Adding other info")
     _add_micro_results(flag="other", cases=cases)
+    
+    save_file.save_variable_to_pickle(variable=cases, file_path='./data/cases_micro_ds_v2.pkl')
+    
+    with open('./data/cases_micro_ds.pkl', 'rb')as f:
+        cases = pickle.load(f)
     # 下一步内容： 对于abxresult 需要用list保存所有数据，输出数据只有positive或者all negative
     
 # filtered_df = micro_df[
