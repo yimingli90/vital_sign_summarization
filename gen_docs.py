@@ -14,7 +14,7 @@ from docx.shared import Inches, RGBColor
 
 
 # vital_sign_sum = cases[0][0]['febrile']['febrile_rule_summarization']
-with open('./data/cases_micro_ds.pkl', 'rb') as pkl:
+with open('./data/cases_micro_ds_v2.pkl', 'rb') as pkl:
     cases = pickle.load(pkl)
 # vital_sign_sum = cases[0][0]['febrile']['febrile_rule_summarization'] + '\n' + cases[0][0]['heart_rate']['hr_rule_summary'] + '\n' + cases[0][0]['systolic_blood_pressure']['sbp_rule_summary']
 
@@ -105,7 +105,7 @@ for i, case_ in enumerate(cases):
             example[key]['human_reader_plt'].savefig(os.path.join(out_put_folder[key], f"group_{i+1}_record_{j+1}.png"), dpi=150)  # 保存图片到本地
         rule_sum = example['febrile']['febrile_rule_summarization'] + '\n' + example['cv_hmd_rule_sum']
         ds_sum = example['ds_summary_all']
-        micro_sum = example['micro_final_results']
+        micro_sum = example['micro_info']['micro_sum']
         
         patient1 = {
             "Consult reason": "Positive blood cultures",
