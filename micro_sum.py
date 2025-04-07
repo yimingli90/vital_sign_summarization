@@ -6,11 +6,8 @@ Created on Fri Mar 21 13:46:22 2025
 """
 
 import pickle
-import time
 import pandas as pd
 import re
-import os
-import ast
 from llm import deepseek
 from utilities import save_file
 from datetime import datetime
@@ -36,9 +33,7 @@ def _get_micro_df():
     
     return df_filtered
 
-
 def _add_micro_df(df):
-    
     """Add micro results to each example."""
     
     with open(CASES_DS, 'rb') as pk:
@@ -60,14 +55,14 @@ def _add_micro_df(df):
             cut_in_time = example['cut_in_time']
             patient_id = example['patientID']
         
-            # Only keep the data 7 days before the admission
+            # Only keep the data 7 days before the cut-in
             matched_df = df[
                 (df["ClusterID"] == patient_id) &
                 (df["CollectionDateTime"] >= cut_in_time - pd.DateOffset(days=7)) &
                 (df["CollectionDateTime"] <= cut_in_time)
             ]
             
-            # Get the records one year before the admission
+            # Get the records one year before the cut-in
             matched_df_1y = df[
                 (df["ClusterID"] == patient_id) &
                 (df["CollectionDateTime"] >= admission_date - pd.DateOffset(years=1)) &
@@ -79,7 +74,6 @@ def _add_micro_df(df):
     return cases
 
 def _determine_result(row):
-    
     """"Return the determined result, with other results confirmed by the LLM"""
     
     reasoning = ""
@@ -104,7 +98,6 @@ def _determine_result(row):
     return reasoning + "!!@@##" + summary
 
 def _process_abx_info(df):
-    
     """Processing antibiotic sensitive and resistant info"""
     
     abx_df = df[(df['DrugName'].notna()) & (df['DrugResult'].notna())].copy()
@@ -151,7 +144,6 @@ def _process_abx_info(df):
     return output_all, output_results    
 
 def _process_other_info(df):
-    
     """Processing other micro results info"""
     
     other_df = df[
@@ -162,14 +154,11 @@ def _process_other_info(df):
     ].copy() 
     other_df['Date'] = other_df['CollectionDateTime'].dt.strftime('%d/%m/%y')
 
-
-    
     def merge_records(df):
         """Merge the the sample type results and sort by date"""
         
         df['Date'] = pd.to_datetime(df['Date'])
         
-
         def standardize_test_entry(test_names, final_results):
             # Pair TestName and FinalResult
             paired = sorted(zip(test_names, final_results), key=lambda x: x[0])
@@ -256,7 +245,7 @@ def _process_other_info(df):
             output = []
             for _, row in other_df_filtered.iterrows():
                 sample_type = row['BatTestName'] if row['TestName'] == 'RESULT' else row['TestName']
-                output.append(f"{row['Date']} – {sample_type} – {row['FinalResult']}")
+                output.append((row['Date'], f"{row['Date']} – {sample_type} – {row['FinalResult']}"))
             other_sum_all = '\n'.join(output)
 
         else:
@@ -293,12 +282,12 @@ def _process_other_info(df):
         return result
     
     def summarize_row(row):
-        date = pd.to_datetime(row["CollectionDate"]).strftime('%d/%m/%y')  # 格式化日期
+        date = pd.to_datetime(row["CollectionDate"]).strftime('%d/%m/%y')  
         test_name = row["BatTestName"]
         specimens = row["SpecimenFull"]
-        results = [clean_result(result) for result in row["ResultFull"]]  # 处理结果文本
+        results = [clean_result(result) for result in row["ResultFull"]]  
         
-        # 组合 SpecimenFull 和 ResultFull
+        
         summary_parts = [f"– {specimen} – {result}" for specimen, result in zip(specimens, results)]
         summary = f"{date} –  {test_name} " + " \n" + " \n".join(summary_parts)
         summary = summary.replace("– BLOOD FOR CULTURE", "– ")
@@ -317,8 +306,7 @@ def _process_other_info(df):
     return sum_mereged, sum_all, other_df, growth_df
 
 def _process_1y_info(df):
-    
-    """Process patient mico data 1 year before the admission"""
+    """Process patient micro data 1 year before the admission"""
     
     df_1y = df[
         df["BatTestName"].str.contains("MRSA", case=False, na=False) |
@@ -389,7 +377,6 @@ def _add_micro_results(flag:str, cases):
 
             count += 1
     
-    
 def _gen_final_results(cases):
     """"Generate final micro summarization"""
 
@@ -398,8 +385,37 @@ def _gen_final_results(cases):
             results_1y = example["micro_info"]['1y_results']
             abx_results = '\n'.join(example["micro_info"]['abx_results'])
             other_results = example["micro_info"]['other_results_merged']
-            
             micro_sum = abx_results + '\n' + other_results
+            
+            pattern = r"(\d{2}/\d{2}/\d{2}.*?)((?=\n\d{2}/\d{2}/\d{2})|$)" 
+            matches = re.findall(pattern, micro_sum, re.DOTALL)
+            micro_sum_list = [match[0].strip() for match in matches]
+                        
+            pattern = r"^(\d{2}/\d{2}/\d{2})\s*[–-]\s*(.*)"  # Match "date separator content"
+            
+            records = {}
+            
+            for record in micro_sum_list:
+                record = record.strip()
+                match = re.match(pattern, record, re.DOTALL)
+                if match:
+                    date_str, content = match.groups()
+
+                    date_obj = datetime.strptime(date_str, "%d/%m/%y")
+
+                    content_key = content.strip()
+                    if content_key in records:
+                        if date_obj > records[content_key][0]:
+                            records[content_key] = (date_obj, record)
+                    else:
+                        records[content_key] = (date_obj, record)
+            
+            # Sort by date in descending order
+            result = sorted([item[1] for item in records.values()], 
+                            key=lambda rec: datetime.strptime(re.match(pattern, rec.strip(), re.DOTALL).group(1), "%d/%m/%y"), 
+                            reverse=True)
+            
+            micro_sum = '\n'.join(result)
             if results_1y:
                 micro_sum += '\n-------------------Precious records (one year)-------------------\n'
                 micro_sum += results_1y 
@@ -410,6 +426,7 @@ def _gen_final_results(cases):
 if __name__ == '__main__':
     micro_df = _get_micro_df()
     cases = _add_micro_df(micro_df)
+    del micro_df
     
     print("Adding abx info")
     _add_micro_results(flag="abx", cases=cases)
@@ -423,21 +440,16 @@ if __name__ == '__main__':
     print("Generating final micro summarization")
     _gen_final_results(cases=cases)
     
-    save_file.save_variable_to_pickle(variable=cases, file_path='./data/cases_micro_ds_v2.pkl')
+    save_file.save_variable_to_pickle(variable=cases, file_path='./data/cases_micro_ds_v3.pkl')
     
-    # with open('./data/cases_micro_ds.pkl', 'rb')as f:
-    #     cases = pickle.load(f)
-    # 下一步内容： 对于abxresult 需要用list保存所有数据，输出数据只有positive或者all negative
+    with open('./data/cases_micro_ds_v3.pkl', 'rb')as f:
+        cases = pickle.load(f)
+
     
-# filtered_df = micro_df[
-#     #~micro_df["TestName"].str.contains("RESULT", case=False, na=False) &
-#     # micro_df["ResultFull"].str.contains("GROWTH", case=False, na=False) &
-#     micro_df["BatTestName"].str.contains("ENTERIC PARASITE PCR", case=False, na=False)
-#   #  micro_df["BatTestName"].str.contains("COMMENT", case=False, na=False)
-# ]
-#                 (df["BatTestName"].str.contains("MRSA", case=False, na=False) |
-#                  df["BatTestName"].str.contains("ESBL", case=False, na=False) |
-#                  df["BatTestName"].str.contains("VRE", case=False, na=False) |
-#                  df["BatTestName"].str.contains("CPE", case=False, na=False) |
-#                  df["BatTestName"].str.contains("CANDIDA AURIS", case=False, na=False)
-#                  )
+filtered_df = micro_df[
+  micro_df["BatTestName"].str.contains("MRSA", case=False, na=False) |
+  micro_df["BatTestName"].str.contains("ESBL", case=False, na=False) |
+  micro_df["BatTestName"].str.contains("VRE", case=False, na=False) |
+  micro_df["BatTestName"].str.contains("CPE", case=False, na=False) |
+  micro_df["BatTestName"].str.contains("CANDIDA AURIS", case=False, na=False)
+].copy().head(50)

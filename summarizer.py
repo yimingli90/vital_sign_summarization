@@ -169,4 +169,4 @@ if __name__ == '__main__':
     # 调用函数，生成 Word 文档
     save_file.save_plots_summarization_to_word(data_list=cases, output_folder='./data/summarization/GPT')
     
-    #save_file.save_variable_to_pickle(cases, './data/summarization/cases_structured_prompt')
+
